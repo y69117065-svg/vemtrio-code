@@ -1,0 +1,70 @@
+{
+  "name": "vemtrio-code",
+  "productName": "VEMTRIO Code",
+  "version": "1.0.0",
+  "description": "VEMTRIO Code — VS Code tarzı kod editörü (Open VSX eklentileri, MCP, Emmet, terminal, canlı önizleme)",
+  "author": "VEMTRIO",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "main.js",
+  "scripts": {
+    "sync": "node scripts/sync.js",
+    "start": "node scripts/sync.js && electron .",
+    "dist": "node scripts/sync.js && electron-builder --win nsis portable"
+  },
+  "devDependencies": {
+    "electron": "45.1.0",
+    "electron-builder": "26.18.1",
+    "monaco-editor": "0.52.2"
+  },
+  "build": {
+    "appId": "app.vemtrio.code",
+    "productName": "VEMTRIO Code",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "main.js",
+      "preload.js",
+      "app/**/*",
+      "!app/web/monaco/vs/**/*.map"
+    ],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [
+        "nsis",
+        "portable"
+      ]
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "VEMTRIO Code",
+      "artifactName": "VEMTRIO-Code-Setup.${ext}"
+    },
+    "fileAssociations": [
+      {
+        "ext": [
+          "html",
+          "js",
+          "css",
+          "json",
+          "md",
+          "py",
+          "lua"
+        ],
+        "name": "VEMTRIO Code",
+        "role": "Editor"
+      }
+    ],
+    "portable": {
+      "artifactName": "VEMTRIO-Code-Portable.${ext}"
+    }
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/y69117065-svg/vemtrio-code.git"
+  },
+  "homepage": "https://vemtriotr.vercel.app/indir"
+}

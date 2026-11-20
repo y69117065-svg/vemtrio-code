@@ -1,0 +1,303 @@
+{
+ "version": "1.3",
+ "ALLOWED_EXT": [
+  "html",
+  "htm",
+  "css",
+  "js",
+  "mjs",
+  "ts",
+  "json",
+  "txt",
+  "md",
+  "py",
+  "lua",
+  "cs",
+  "cpp",
+  "c",
+  "h",
+  "hpp",
+  "java",
+  "kt",
+  "gd",
+  "rs",
+  "go",
+  "rb",
+  "php",
+  "sh",
+  "glsl",
+  "svg",
+  "xml",
+  "csv",
+  "yml",
+  "yaml",
+  "toml",
+  "ini",
+  "cfg"
+ ],
+ "LIMITS": {
+  "files": 30,
+  "fileBytes": 102400,
+  "totalBytes": 307200
+ },
+ "W": {
+  "crit": 60,
+  "high": 30,
+  "med": 12,
+  "low": 4
+ },
+ "RULES": [
+  {
+   "id": "miner",
+   "sev": "crit",
+   "re": {
+    "src": "\\b(coinhive|coin-hive|cryptonight|xmrig|stratum\\+tcp|coinimp|deepminer|webminepool|cryptoloot|minero\\.cc|jsecoin)\\b",
+    "flags": "i"
+   },
+   "tr": "Kripto para madencisi izi (bilgisayarını gizlice yorar).",
+   "en": "Crypto-miner signature (secretly uses your CPU)."
+  },
+  {
+   "id": "webhook",
+   "sev": "crit",
+   "re": {
+    "src": "discord(app)?\\.com\\/api\\/webhooks\\/",
+    "flags": "i"
+   },
+   "tr": "Discord webhook'una veri gönderimi (çalınan bilgiler sık sık buraya yollanır).",
+   "en": "Sends data to a Discord webhook (common exfiltration target)."
+  },
+  {
+   "id": "token_grab",
+   "sev": "crit",
+   "re": {
+    "src": "(Local Storage[\\\\/]+leveldb|discord[\\\\/]+Local Storage|\\\\Discord\\\\|[\\\\/](Login Data|Cookies|Web Data)[\"']|[\"'](Login Data|Web Data)[\"']|wallet\\.dat)",
+    "flags": "i"
+   },
+   "tr": "Tarayıcı/Discord şifre ve token dosyalarına erişim (hesap hırsızlığı).",
+   "en": "Reads browser/Discord credential or token files (account theft)."
+  },
+  {
+   "id": "ps_encoded",
+   "sev": "crit",
+   "re": {
+    "src": "powershell(\\.exe)?[^\\n]{0,80}(-enc(odedcommand)?\\b|-w(indowstyle)?\\s+hidden|downloadstring|invoke-expression|\\biex\\b)",
+    "flags": "i"
+   },
+   "tr": "Gizli/şifreli PowerShell komutu.",
+   "en": "Hidden or encoded PowerShell command."
+  },
+  {
+   "id": "destroy",
+   "sev": "crit",
+   "re": {
+    "src": "(vssadmin(\\.exe)?\\s+delete|bcdedit\\s*\\/set|wevtutil\\s+cl|cipher\\s*\\/w|format\\s+[c-z]:|rm\\s+-rf\\s+(\\/|~|\\$HOME)(\\s|$|[\"'])|del\\s+\\/[fsq]\\s+\\/[fsq]|rd\\s+\\/s\\s+\\/q\\s+[c-z]:)",
+    "flags": "i"
+   },
+   "tr": "Dosya/yedek silen ya da diski biçimlendiren komut (fidye yazılımı davranışı).",
+   "en": "Command that wipes files, backups or disks (ransomware behaviour)."
+  },
+  {
+   "id": "persist",
+   "sev": "high",
+   "re": {
+    "src": "(CurrentVersion\\\\{1,2}Run|schtasks(\\.exe)?\\s+\\/create|reg(\\.exe)?\\s+add\\s+[^\\n]*\\\\run\\b|\\\\Startup\\\\|shell:startup|crontab\\s+-)",
+    "flags": "i"
+   },
+   "tr": "Bilgisayar her açıldığında kendini çalıştırma (kalıcılık).",
+   "en": "Makes itself run at every startup (persistence)."
+  },
+  {
+   "id": "exe_download",
+   "sev": "crit",
+   "re": {
+    "src": "(download|href|fetch|urlretrieve|wget|curl|Invoke-WebRequest|DownloadFile)[^\\n]{0,160}[\\\\/\"'=\\s][A-Za-z0-9_\\-.]+\\.(exe|scr|bat|cmd|msi|dll|apk|vbs|ps1|jar|hta)(?:[\"'?#\\s)]|$)",
+    "flags": "i"
+   },
+   "tr": "Çalıştırılabilir dosya (.exe, .bat, .scr...) indirme.",
+   "en": "Downloads an executable file (.exe, .bat, .scr...)."
+  },
+  {
+   "id": "hidden_iframe",
+   "sev": "crit",
+   "re": {
+    "src": "<iframe[^>]*(width\\s*=\\s*[\"']?0|height\\s*=\\s*[\"']?0|display\\s*:\\s*none|visibility\\s*:\\s*hidden)",
+    "flags": "i"
+   },
+   "tr": "Görünmez iframe (arka planda başka site yükleme).",
+   "en": "Invisible iframe (loads another site in the background)."
+  },
+  {
+   "id": "browser_lock",
+   "sev": "high",
+   "re": {
+    "src": "(while\\s*\\(\\s*(true|1|!0)\\s*\\)|for\\s*\\(\\s*;\\s*;\\s*\\))\\s*\\{?\\s*(alert|confirm|prompt|window\\.open|history\\.pushState)\\s*\\(",
+    "flags": "i"
+   },
+   "tr": "Tarayıcıyı kilitleyen sonsuz uyarı/pencere döngüsü.",
+   "en": "Infinite alert/popup loop that locks the browser."
+  },
+  {
+   "id": "shell_exec",
+   "sev": "high",
+   "re": {
+    "src": "(require\\s*\\(\\s*[\"']child_process[\"']\\s*\\)|\\bchild_process\\b|os\\.system\\s*\\(|subprocess\\.(Popen|call|run|check_output)\\s*\\(|Runtime\\.getRuntime\\(\\)\\.exec|Process\\.Start\\s*\\(|ShellExecute|WScript\\.Shell)",
+    "flags": "i"
+   },
+   "tr": "Bilgisayarda komut çalıştırma yetkisi (oyunlarda nadiren gerekir).",
+   "en": "Runs system commands (rarely needed by games)."
+  },
+  {
+   "id": "keyhook",
+   "sev": "high",
+   "re": {
+    "src": "\\b(SetWindowsHookEx|GetAsyncKeyState|pynput|keyboard\\.on_press|keyboard\\.hook)\\b",
+    "flags": "i"
+   },
+   "tr": "Sistem genelinde tuş dinleme (keylogger tekniği).",
+   "en": "System-wide key capture (keylogger technique)."
+  },
+  {
+   "id": "telegram",
+   "sev": "high",
+   "re": {
+    "src": "api\\.telegram\\.org\\/bot",
+    "flags": "i"
+   },
+   "tr": "Telegram botuna veri gönderimi.",
+   "en": "Sends data to a Telegram bot."
+  },
+  {
+   "id": "decode_exec",
+   "sev": "high",
+   "re": {
+    "src": "(eval|Function|setTimeout|setInterval)\\s*\\(\\s*(atob|unescape|decodeURIComponent|String\\.fromCharCode|escape)\\s*\\(",
+    "flags": "i"
+   },
+   "tr": "Gizlenmiş (şifrelenmiş) kodu çözüp çalıştırma.",
+   "en": "Decodes hidden (encoded) code and runs it."
+  },
+  {
+   "id": "obf_names",
+   "sev": "med",
+   "re": {
+    "src": "_0x[0-9a-f]{4,6}",
+    "flags": "i"
+   },
+   "tr": "Kod karartma (obfuscation) izleri: okunamaz değişken adları.",
+   "en": "Obfuscation markers: unreadable variable names."
+  },
+  {
+   "id": "eval",
+   "sev": "med",
+   "re": {
+    "src": "\\beval\\s*\\(|new\\s+Function\\s*\\(",
+    "flags": ""
+   },
+   "tr": "Metni kod olarak çalıştırma (eval).",
+   "en": "Executes text as code (eval)."
+  },
+  {
+   "id": "str_timer",
+   "sev": "low",
+   "re": {
+    "src": "set(Timeout|Interval)\\s*\\(\\s*[\"'`]",
+    "flags": ""
+   },
+   "tr": "Zamanlayıcıya kod metni verme.",
+   "en": "Passes code as a string to a timer."
+  },
+  {
+   "id": "redirect",
+   "sev": "med",
+   "re": {
+    "src": "\\b(top|parent|window)\\.location(\\.href)?\\s*=\\s*[\"'`]https?:|location\\.replace\\s*\\(\\s*[\"'`]https?:|<meta[^>]+http-equiv\\s*=\\s*[\"']?refresh",
+    "flags": "i"
+   },
+   "tr": "Ziyaretçiyi başka bir siteye yönlendirme.",
+   "en": "Redirects the visitor to another site."
+  },
+  {
+   "id": "remote_script",
+   "sev": "low",
+   "re": {
+    "src": "<script[^>]+src\\s*=\\s*[\"']?(https?:)?\\/\\/",
+    "flags": "i"
+   },
+   "tr": "Dış sunucudan script yükleme (o kod burada taranamaz).",
+   "en": "Loads a script from an external server (that code can't be scanned here)."
+  },
+  {
+   "id": "clipboard",
+   "sev": "low",
+   "re": {
+    "src": "navigator\\.clipboard\\.writeText|execCommand\\s*\\(\\s*[\"']copy",
+    "flags": "i"
+   },
+   "tr": "Panoya yazma (kopyaladığın şeyi değiştirebilir).",
+   "en": "Writes to the clipboard."
+  },
+  {
+   "id": "sw",
+   "sev": "low",
+   "re": {
+    "src": "navigator\\.serviceWorker\\.register",
+    "flags": ""
+   },
+   "tr": "Arka planda çalışan service worker kaydı.",
+   "en": "Registers a background service worker."
+  },
+  {
+   "id": "notif",
+   "sev": "low",
+   "re": {
+    "src": "Notification\\.requestPermission",
+    "flags": ""
+   },
+   "tr": "Bildirim izni isteme.",
+   "en": "Asks for notification permission."
+  },
+  {
+   "id": "unload",
+   "sev": "low",
+   "re": {
+    "src": "onbeforeunload|addEventListener\\s*\\(\\s*[\"']beforeunload",
+    "flags": ""
+   },
+   "tr": "Sayfadan çıkışı engellemeye çalışma.",
+   "en": "Tries to block leaving the page."
+  },
+  {
+   "id": "wasm",
+   "sev": "low",
+   "re": {
+    "src": "WebAssembly\\.(instantiate|compile)",
+    "flags": ""
+   },
+   "tr": "WebAssembly çalıştırma (içeriği okunamaz).",
+   "en": "Runs WebAssembly (contents not readable)."
+  },
+  {
+   "id": "dangerous_py",
+   "sev": "med",
+   "re": {
+    "src": "(shutil\\.rmtree|os\\.remove\\s*\\(|os\\.unlink|ctypes\\.windll|winreg\\.|import\\s+winreg)",
+    "flags": ""
+   },
+   "tr": "Dosya silme ya da Windows sistemine erişim.",
+   "en": "Deletes files or accesses Windows internals."
+  }
+ ],
+ "NET": {
+  "src": "(fetch\\s*\\(|XMLHttpRequest|navigator\\.sendBeacon|\\.send\\s*\\(|new\\s+Image\\s*\\(|\\.src\\s*=\\s*[\"'`]?https?:|requests\\.(post|get)|urllib|WebSocket\\s*\\()",
+  "flags": "i"
+ },
+ "COOKIE": {
+  "src": "document\\.cookie(?!\\s*=[^=])|localStorage\\.getItem\\s*\\(\\s*[\"'](token|auth|session|password)",
+  "flags": "i"
+ },
+ "KEY_NET": {
+  "src": "(sendBeacon|fetch|\\.send|\\.emit|WebSocket|\\.src\\s*=)\\s*\\(?[^\\n]*\\b(e|ev|event|evt)\\.(key|keyCode|which|code)\\b|\\bkeylog(ger)?\\b",
+  "flags": "i"
+ }
+}

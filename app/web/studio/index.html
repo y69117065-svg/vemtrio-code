@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#181a1f">
+<title>VEMTRIO Code</title>
+<meta name="description" content="VEMTRIO Code: tarayıcıda ve masaüstünde çalışan, VS Code tarzı kod editörü. Open VSX eklentileri, MCP sunucuları, Emmet, terminal ve canlı önizleme.">
+<link rel="icon" type="image/png" href="../img/logo.png">
+<link rel="preconnect" href="https://fonts.googleapis.com/">
+<link rel="preconnect" href="https://fonts.gstatic.com/" crossorigin="">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="studio.css">
+<script>
+(function(){var l=null;try{l=localStorage.getItem('vemtrio-lang');}catch(e){}
+ if(!l)l=(navigator.language||'').toLowerCase().indexOf('tr')===0?'tr':'en';document.documentElement.lang=l;
+ if(window.vnative)document.documentElement.classList.add('desktop');})();
+</script>
+</head>
+<body>
+<div id="wb" class="wb">
+  <header class="titlebar" id="titlebar">
+    <img class="tb-logo" src="../img/logo.png" alt="">
+    <nav class="menubar" id="menubar"></nav>
+    <button class="tb-search" id="tb-search" type="button"><span id="tb-title">VEMTRIO Code</span><kbd>Ctrl+P</kbd></button>
+    <div class="tb-right" id="tb-right"></div>
+  </header>
+  <div class="main">
+    <nav class="activity" id="activity"></nav>
+    <aside class="sidebar" id="sidebar">
+      <div class="sb-head"><span id="sb-title"></span><div class="sb-actions" id="sb-actions"></div></div>
+      <div class="sb-body" id="sb-body"></div>
+    </aside>
+    <div class="sash" id="sash-side"></div>
+    <section class="center">
+      <div class="editor-area" id="editor-area">
+        <div class="tabs" id="tabs"></div>
+        <div class="crumbs" id="crumbs"></div>
+        <div class="editor-host" id="editor-host">
+          <div id="monaco" class="monaco-host"></div>
+          <div id="custom-view" class="custom-view" hidden></div>
+        </div>
+      </div>
+      <div class="sash-h" id="sash-panel"></div>
+      <div class="panel" id="panel">
+        <div class="panel-tabs" id="panel-tabs"></div>
+        <div class="panel-body" id="panel-body"></div>
+      </div>
+    </section>
+    <div class="sash" id="sash-right"></div>
+    <aside class="aux" id="aux" hidden></aside>
+  </div>
+  <footer class="statusbar" id="statusbar"></footer>
+</div>
+<div class="palette-wrap" id="palette" hidden><div class="palette"><input id="pal-in" autocomplete="off" spellcheck="false"><div class="pal-list" id="pal-list"></div></div></div>
+<div class="menu-pop" id="menu-pop" hidden></div>
+<div class="toasts" id="toasts"></div>
+<div class="modal-wrap" id="modal" hidden><div class="modal" id="modal-box"></div></div>
+
+<!-- Global (UMD) kütüphaneler AMD yükleyiciden ÖNCE yüklenmeli, yoksa kendilerini AMD modülü olarak kaydederler -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/emmet-monaco-es@5.5.0/dist/emmet-monaco.min.js"></script>
+<script src="../lib/guard.js"></script>
+<script src="../lib/profanity.js"></script>
+<script>window.MONACO_BASE = "app://vemtrio/monaco/vs"; window.MONACO_BASE = window.MONACO_BASE || "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs";</script>
+<script src="studio-core.js"></script>
+<script src="studio-ext.js"></script>
+<script src="studio-mcp.js"></script>
+<script src="studio-ai.js"></script>
+<script src="studio-boot.js"></script>
+</body>
+</html>
