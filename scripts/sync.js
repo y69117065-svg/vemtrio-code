@@ -13,7 +13,8 @@ if (fs.existsSync(path.join(SITE, "studio"))) {
     cp(path.join(SITE, "img", "logo.png"), path.join(OUT, "img", "logo.png"));
     for (const f of ["guard.js", "profanity.js", "guard-rules.json"]) if (fs.existsSync(path.join(SITE, "lib", f))) cp(path.join(SITE, "lib", f), path.join(OUT, "lib", f));
     cp(path.join(SITE, "vemtrio.js"), path.join(OUT, "vemtrio.js"));
-    cp(path.join(SITE, "img", "logo.png"), path.join(ROOT, "build", "icon.png"));
+    // Uygulama simgesi build/icon.png'de ayrı tutulur (koyu zeminli; beyaz logo açık masaüstünde görünmüyordu). Sadece yoksa logodan oluşur.
+    if (!fs.existsSync(path.join(ROOT, "build", "icon.png"))) cp(path.join(SITE, "img", "logo.png"), path.join(ROOT, "build", "icon.png"));
     console.log("site → app/web kopyalandı");
 } else if (!fs.existsSync(path.join(OUT, "studio"))) {
     console.error("app/web/studio bulunamadı ve site klasörü yok: " + SITE); process.exit(1);
