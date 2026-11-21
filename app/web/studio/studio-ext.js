@@ -68,7 +68,7 @@
         if (!ns || !name) return VS.toast(t("Eklenti kimliği yayıncı.ad biçiminde olmalı", "Extension id must be publisher.name"), "err");
         const L = t("Eklentiler", "Extensions");
         VS.log(L, `${t("Kuruluyor", "Installing")} ${id}…`);
-        const tt = VS.toast(`⏳ ${id} ${t("indiriliyor…", "downloading…")}`, "", 0);
+        const tt = VS.toast(`${id} ${t("indiriliyor…", "downloading…")}`, "", 0);
         try {
             const meta = await (await fetch(`${API}/${ns}/${name}${version ? "/" + version : ""}`)).json();
             if (meta.error) throw new Error(meta.error);
@@ -96,13 +96,30 @@
             tt.remove();
             const got = [contrib.themes.length && contrib.themes.length + t(" tema", " theme(s)"), contrib.snippets.length && contrib.snippets.length + " snippet", contrib.languages.length && contrib.languages.length + t(" dil", " language(s)")].filter(Boolean).join(", ");
             VS.log(L, `✓ ${id} ${meta.version} — ${got || t("uygulanabilir katkı yok", "no applicable contributions")}${unsupported.length ? " · " + t("desteklenmeyen: ", "unsupported: ") + unsupported.join(", ") : ""}`, "o");
-            if (contrib.themes.length) VS.toast(`✓ ${installed[id].meta.displayName} ${t("kuruldu.", "installed.")}`, "ok", 9000, [{ label: t("Temayı uygula", "Set Color Theme"), run: () => VS.setSetting("workbench.colorTheme", contrib.themes[0].label) }, { label: t("Tüm temalar", "All themes"), sec: true, run: () => VS.run("workbench.action.selectTheme") }]);
+            const eq = VS.extEquivalent(id);
+            if (eq) { VS.toast(`✓ ${installed[id].meta.displayName} ${t("kuruldu", "installed")}. ${eq.msg}`, "ok", 14000, [{ label: eq.btn, run: () => VS.run(eq.cmd) }]); VS.renderStatus && VS.renderStatus(); }
+            else if (contrib.themes.length) VS.toast(`✓ ${installed[id].meta.displayName} ${t("kuruldu.", "installed.")}`, "ok", 9000, [{ label: t("Temayı uygula", "Set Color Theme"), run: () => VS.setSetting("workbench.colorTheme", contrib.themes[0].label) }, { label: t("Tüm temalar", "All themes"), sec: true, run: () => VS.run("workbench.action.selectTheme") }]);
             else VS.toast(`✓ ${installed[id].meta.displayName} ${t("kuruldu", "installed")}${got ? " (" + got + ")" : ""}.${!got && unsupported.length ? " " + t("Bu eklenti kod çalıştırıyor; VEMTRIO Code'da şimdilik etkin olamaz.", "This extension runs code; it can't be active in VEMTRIO Code yet.") : ""}`, got ? "ok" : "warn", 7000);
             VS.renderActivity(); if (VS.currentView() === "extensions") VS.renderSide();
             const tab = VS.activeTab(); if (tab && tab.path === "ext:" + id) VS.openExtension(id);
         } catch (e) { tt.remove(); VS.log(L, `✗ ${id}: ${e.message}`, "e"); VS.toast(`${id}: ${e.message}`, "err"); }
     }
     VS.installExtension = install;
+
+    // ---- yerleşik karşılıklar ----
+    // Kod çalıştıran popüler eklentiler tarayıcıda çalışamaz; ama VEMTRIO Code'da aynı işi gören yerleşik bir özellik varsa ona bağlanır.
+    const EQUIV = {
+        "ritwickdey.liveserver": "live", "ms-vscode.live-server": "live", "yandeu.five-server": "live",
+        "esbenp.prettier-vscode": "format", "dbaeumer.vscode-eslint": "lint",
+    };
+    const EQ_INFO = () => ({
+        live: { msg: t("Live Server, VEMTRIO Code'un yerleşik canlı önizlemesiyle çalışıyor: alttaki çubukta ◉ Go Live düğmesi ya da Ctrl+Shift+V. Kaydettikçe (Ctrl+S) sayfa kendiliğinden yenilenir.", "Live Server runs on VEMTRIO Code's built-in live preview: use ◉ Go Live in the status bar or Ctrl+Shift+V. The page reloads as you save."), btn: "◉ Go Live", cmd: "preview.toggle" },
+        format: { msg: t("Prettier, VEMTRIO Code'un yerleşik biçimlendiricisiyle çalışıyor: Shift+Alt+F ya da sağ tık > Belgeyi Biçimlendir (JS, TS, HTML, CSS, JSON).", "Prettier runs on the built-in formatter: Shift+Alt+F or right click > Format Document (JS, TS, HTML, CSS, JSON)."), btn: t("Şimdi biçimlendir", "Format now"), cmd: "editor.action.formatDocument" },
+        lint: { msg: t("ESLint yerine VEMTRIO Code'un yerleşik hata denetimi çalışıyor: hatalar kodun altında kırmızı çizilir ve Sorunlar panelinde listelenir.", "Instead of ESLint, the built-in checker underlines problems and lists them in the Problems panel."), btn: t("Sorunları göster", "Show problems"), cmd: "workbench.actions.view.problems" },
+    });
+    const eqOf = id => EQUIV[String(id || "").toLowerCase()];
+    VS.extEquivalent = id => { const k = eqOf(id); return k ? EQ_INFO()[k] : null; };
+    VS.liveServerOn = () => Object.entries(installed).some(([id, e]) => e && e.enabled !== false && eqOf(id) === "live");
     function uninstall(id) { deactivate(id); const th = VS.themes[VS.settings["workbench.colorTheme"]]; delete installed[id]; save(); if (!th || th.ext) VS.applyTheme(VS.settings["workbench.colorTheme"]); VS.toast(`${id} ${t("kaldırıldı.", "uninstalled.")}`); VS.renderActivity(); if (VS.currentView() === "extensions") VS.renderSide(); }
     function toggle(id) { const e = installed[id]; e.enabled = !e.enabled; save(); e.enabled ? activate(id) : deactivate(id); VS.applyTheme(VS.settings["workbench.colorTheme"]); VS.renderSide(); }
 
@@ -117,7 +134,7 @@
     function card(x, inst) {
         const id = inst ? x.meta.id : x.namespace + "." + x.name; const m = inst ? x.meta : x;
         const icon = inst ? m.icon : x.files && x.files.icon;
-        return `<div class="ext" data-id="${esc(id)}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : `<div class="noimg"></div>`}<div class="b"><b>${esc(m.displayName || x.name)}</b><p>${esc(m.description || "")}</p><small>${esc(inst ? m.publisher : x.namespace)}${!inst && x.downloadCount ? ` · ⬇ ${x.downloadCount > 1e6 ? (x.downloadCount / 1e6).toFixed(1) + "M" : x.downloadCount > 1e3 ? Math.round(x.downloadCount / 1e3) + "K" : x.downloadCount}` : ""}${installed[id] ? ` <span class="tag">${installed[id].enabled ? t("KURULU", "INSTALLED") : t("KAPALI", "DISABLED")}</span>` : ` <button class="btn" style="height:18px;padding:0 6px;font-size:10px;margin-left:auto" data-inst="${esc(id)}">${t("Kur", "Install")}</button>`}</small></div></div>`;
+        return `<div class="ext" data-id="${esc(id)}">${icon ? `<img src="${esc(icon)}" alt="" loading="lazy">` : `<div class="noimg"></div>`}<div class="b"><b>${esc(m.displayName || x.name)}</b><p>${esc(m.description || "")}</p><small>${esc(inst ? m.publisher : x.namespace)}${!inst && x.downloadCount ? ` · ${x.downloadCount > 1e6 ? (x.downloadCount / 1e6).toFixed(1) + "M" : x.downloadCount > 1e3 ? Math.round(x.downloadCount / 1e3) + "K" : x.downloadCount}` : ""}${installed[id] ? ` <span class="tag">${installed[id].enabled ? t("KURULU", "INSTALLED") : t("KAPALI", "DISABLED")}</span>` : ` <button class="btn" style="height:18px;padding:0 6px;font-size:10px;margin-left:auto" data-inst="${esc(id)}">${t("Kur", "Install")}</button>`}</small></div></div>`;
     }
     function draw() {
         const el = $("#ext-res"); if (!el) return;
@@ -150,14 +167,14 @@
         const inst = installed[id];
         const readme = meta.files && meta.files.readme ? await fetch(meta.files.readme).then(r => r.ok ? r.text() : "").catch(() => "") : "";
         el.innerHTML = `<div class="extpage"><div class="hd">${(meta.files && meta.files.icon) || (inst && inst.meta.icon) ? `<img src="${esc((meta.files && meta.files.icon) || inst.meta.icon)}" alt="">` : ""}<div style="flex:1;min-width:0"><h1>${esc(meta.displayName || (inst && inst.meta.displayName) || id)}</h1>
-            <div class="meta"><span>${esc(meta.namespaceDisplayName || ns)}</span><span>v${esc(meta.version || (inst && inst.meta.version) || "")}</span>${meta.downloadCount ? `<span>⬇ ${meta.downloadCount.toLocaleString()}</span>` : ""}${meta.averageRating ? `<span>★ ${meta.averageRating.toFixed(1)}</span>` : ""}${meta.license ? `<span>${esc(meta.license)}</span>` : ""}</div>
+            <div class="meta"><span>${esc(meta.namespaceDisplayName || ns)}</span><span>v${esc(meta.version || (inst && inst.meta.version) || "")}</span>${meta.downloadCount ? `<span>${meta.downloadCount.toLocaleString()}</span>` : ""}${meta.averageRating ? `<span>★ ${meta.averageRating.toFixed(1)}</span>` : ""}${meta.license ? `<span>${esc(meta.license)}</span>` : ""}</div>
             <p>${esc(meta.description || (inst && inst.meta.description) || "")}</p>
             <div class="row" style="margin-top:12px">${inst ? `<button class="btn sec" data-a="toggle">${inst.enabled ? t("Devre Dışı Bırak", "Disable") : t("Etkinleştir", "Enable")}</button><button class="btn danger" data-a="un">${t("Kaldır", "Uninstall")}</button>${inst.contrib.themes.length ? `<button class="btn" data-a="theme">${t("Renk Temasını Ayarla", "Set Color Theme")}</button>` : ""}` : `<button class="btn" data-a="in">${t("Kur", "Install")}</button>`}<code class="hint" style="margin-left:8px">${esc(id)}</code></div>
-            ${inst ? `<div class="contrib">${inst.contrib.themes.map(x => `<span class="ok">🎨 ${esc(x.label)}</span>`).join("")}${inst.contrib.snippets.map(x => `<span class="ok">✂ ${esc(x.language)}</span>`).join("")}${inst.contrib.languages.map(x => `<span class="ok">{ } ${esc(x.id)}</span>`).join("")}${(inst.unsupported || []).map(x => `<span title="${t("desteklenmiyor", "unsupported")}">✕ ${esc(x)}</span>`).join("")}</div>` : ""}
+            ${inst ? `<div class="contrib">${inst.contrib.themes.map(x => `<span class="ok">${esc(x.label)}</span>`).join("")}${inst.contrib.snippets.map(x => `<span class="ok">${esc(x.language)}</span>`).join("")}${inst.contrib.languages.map(x => `<span class="ok">{ } ${esc(x.id)}</span>`).join("")}${(inst.unsupported || []).map(x => `<span title="${t("desteklenmiyor", "unsupported")}">✕ ${esc(x)}</span>`).join("")}</div>` : ""}
             </div></div><div class="readme" id="ext-readme"></div></div>`;
         $("#ext-readme").innerHTML = mdToHtml(readme);
         el.onclick = e => { const a = e.target.closest("[data-a]"); if (!a) return; ({ in: () => { a.disabled = true; a.textContent = "…"; install(id); }, un: () => { uninstall(id); VS.openExtension(id); }, toggle: () => { toggle(id); VS.openExtension(id); }, theme: () => VS.setSetting("workbench.colorTheme", inst.contrib.themes[0].label) })[a.dataset.a](); };
-    }, { icon: "🧩" });
+    }, { icon: "" });
     // Basit, güvenli markdown → HTML (README için; ham HTML kaçırılır)
     function mdToHtml(md) {
         if (!md) return `<p class="hint">README yok.</p>`;

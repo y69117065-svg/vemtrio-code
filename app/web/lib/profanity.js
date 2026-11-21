@@ -10,12 +10,16 @@
     const TR_PREFIX = ["orospu", "orosbu", "orspu", "oruspu", "orusbu", "siktir", "sikerim", "sikeyim", "siktim", "sikim", "sikik", "sikis", "sikiyim", "yarak", "dalyarak",
         "amcik", "amina", "aminako", "pezevenk", "gavat", "kahpe", "kaltak", "fahise", "surtuk", "yavsak", "ibne", "serefsiz", "gerizekali",
         "tasak", "gotveren", "gotlek", "pezeveng", "anani", "avradini", "bacini", "sokayim", "sokarim", "yarag"];
-    const EN_PREFIX = ["fuck", "fck", "motherf", "bitch", "biatch", "shit", "cunt", "ashole", "bastard", "whore", "slut", "retard", "wanker", "pusy", "dildo", "porn"];
+    const EN_PREFIX = ["fuck", "fck", "motherf", "bitch", "biatch", "shit", "cunt", "ashole", "bastard", "whore", "slut", "retard", "wanker", "pusy", "dildo", "porn",
+        // müstehcen / cinsel içerik
+        "vajina", "vagina", "masturb", "mastrb", "orgazm", "orgasm", "erotik", "erotic", "hentai", "nudes", "titty", "blowjob", "handjob", "cumshot", "onlyfans", "pornhub", "xvideos", "xhamster"];
     const RAW_TR_PREFIX = ["piç", "götveren", "götlek"];                         // Türkçe harfiyle (piçlik)
     const RAW_TR_EXACT = new Set(["göt", "götü", "götün", "götünü", "götüne", "göte", "götte", "götten", "götlü"]);   // "götürdü" masum kalsın
     const RAW_PREFIX = ["nigger", "nigga", "faggot"];        // harf tekrarı silinmeden bakılır (Niger masum kalsın)
     const ALLOW = new Set(["shitake", "shiitake", "sikke", "sikkeler", "dickens", "cocktail", "cockpit"]);
-    const EXACT = new Set(["amk", "aq", "amq", "mk", "sg", "sik", "dick", "cock", "twat", "kys", "fag", "fu", "stfu", "wtf"]);
+    const EXACT = new Set(["amk", "aq", "amq", "mk", "sg", "sik", "dick", "cock", "twat", "kys", "fag", "fu", "stfu", "wtf",
+        // müstehcen (tam kelime: "seksen", "seksek", "saksofon", "penisilin", "Essex" masum kalsın)
+        "seks", "seksi", "sekse", "seksin", "sekste", "seksten", "seksle", "sex", "sexy", "seksuel", "sexual", "nude", "nsfw", "tits", "boob", "boobs", "horny", "sakso", "saksocu", "penis", "penisi", "penise", "penisin", "memeler", "memelerini", "goguslerini"]);
     const SUBSTR = ["fuck", "orospu", "siktir", "amcik", "pezevenk", "motherf"];     // harfler bitişik yazılmış uzun hileler için
 
     const LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i", "|": "i" };

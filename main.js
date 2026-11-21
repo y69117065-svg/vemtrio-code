@@ -41,7 +41,34 @@ app.whenReady().then(() => {
         return net.fetch(pathToFileURL(p).toString());
     });
     createWindow();
+    setTimeout(checkForUpdate, 5000); // açılıştan biraz sonra, editörü yavaşlatmadan
 });
+
+// ---- güncelleme kontrolü: GitHub'daki son sürüm daha yeniyse kullanıcıya sorar ----
+// "Sonra" denen sürüm bir daha sorulmaz (userData/update.json). İnternet yoksa sessizce geçer.
+const RELEASES = "https://api.github.com/repos/y69117065-svg/vemtrio-code/releases/latest";
+const newer = (a, b) => { const x = String(a).replace(/^v/, "").split(".").map(Number), y = String(b).replace(/^v/, "").split(".").map(Number); for (let i = 0; i < 3; i++) { if ((x[i] || 0) !== (y[i] || 0)) return (x[i] || 0) > (y[i] || 0); } return false; };
+async function checkForUpdate() {
+    if (process.env.VCODE_SMOKE) return;
+    try {
+        const r = await net.fetch(RELEASES, { headers: { "User-Agent": "VEMTRIO-Code/" + app.getVersion(), Accept: "application/vnd.github+json" } });
+        if (!r.ok) return;
+        const rel = await r.json(), latest = String(rel.tag_name || "").replace(/^v/, "");
+        if (!latest || !newer(latest, app.getVersion())) return;
+        const file = path.join(app.getPath("userData"), "update.json");
+        let skip = ""; try { skip = JSON.parse(fs.readFileSync(file, "utf8")).skip || ""; } catch (e) { }
+        if (skip === latest || !win) return;
+        const notes = String(rel.body || "").replace(/\r/g, "").split("\n").filter(Boolean).slice(0, 8).join("\n");
+        const { response } = await dialog.showMessageBox(win, {
+            type: "info", title: "VEMTRIO Code güncellemesi",
+            message: `Yeni sürüm hazır: v${latest}`,
+            detail: `Kullandığın sürüm: v${app.getVersion()}\n\n${notes ? "Yenilikler:\n" + notes + "\n\n" : ""}İndirip kurduğunda ayarların ve projelerin korunur.`,
+            buttons: ["İndir", "Sonra"], defaultId: 0, cancelId: 1, noLink: true,
+        });
+        if (response === 0) shell.openExternal(SITE + "/indir");
+        else fs.writeFileSync(file, JSON.stringify({ skip: latest }));
+    } catch (e) { /* çevrimdışı ya da GitHub'a ulaşılamadı: sessizce geç */ }
+}
 app.on("second-instance", () => { if (win) { if (win.isMinimized()) win.restore(); win.focus(); } });
 app.on("window-all-closed", () => { killAll(); app.quit(); });
 

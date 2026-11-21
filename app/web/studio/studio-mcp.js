@@ -146,21 +146,21 @@
             el.innerHTML = `<div class="runner"><div><div class="hint">MCP · ${esc(server)}</div><h2>${esc(tool.title || tool.name)}</h2><p class="hint" style="margin-top:6px;white-space:pre-wrap">${esc(tool.description || "")}</p>${tool.annotations ? `<div class="contrib">${tool.annotations.readOnlyHint ? `<span class="ok">${t("salt okunur", "read-only")}</span>` : ""}${tool.annotations.destructiveHint ? `<span style="color:var(--bad)">${t("yıkıcı", "destructive")}</span>` : ""}${tool.annotations.openWorldHint ? `<span>${t("dış dünya", "open world")}</span>` : ""}</div>` : ""}</div>
                 <div class="contrib">${Object.entries((tool.inputSchema && tool.inputSchema.properties) || {}).map(([k, v]) => `<span title="${esc(v.description || "")}">${esc(k)}${req.includes(k) ? "*" : ""}: ${esc(v.type || "any")}</span>`).join("")}</div>
                 <label class="f">${t("ARGÜMANLAR (JSON)", "ARGUMENTS (JSON)")}<textarea id="tr-args" rows="8">${esc(JSON.stringify(skeleton(tool.inputSchema), null, 2))}</textarea></label>
-                <div class="row"><button class="btn" id="tr-run">▶ ${t("Çalıştır", "Run")} <kbd style="color:inherit;border-color:currentColor">Ctrl+Enter</kbd></button><button class="btn sec" id="tr-schema">${t("Şemayı göster", "Show schema")}</button></div>
+                <div class="row"><button class="btn" id="tr-run">${t("Çalıştır", "Run")} <kbd style="color:inherit;border-color:currentColor">Ctrl+Enter</kbd></button><button class="btn sec" id="tr-schema">${t("Şemayı göster", "Show schema")}</button></div>
                 <pre id="tr-out" class="hint">${t("Sonuç burada görünecek.", "Result will appear here.")}</pre></div>`;
             const run = async () => {
                 let args; try { args = JSON.parse($("#tr-args").value || "{}"); } catch (e) { $("#tr-out").textContent = "JSON: " + e.message; return; }
                 $("#tr-out").textContent = "…"; const t0 = performance.now();
-                try { const r = await VS.mcpCall(server, name, args); $("#tr-out").textContent = (r.isError ? "⚠ isError\n" : "") + resultText(r) + `\n\n— ${Math.round(performance.now() - t0)} ms`; $("#tr-out").style.color = r.isError ? "var(--bad)" : "var(--fg)"; }
+                try { const r = await VS.mcpCall(server, name, args); $("#tr-out").textContent = (r.isError ? "isError\n" : "") + resultText(r) + `\n\n— ${Math.round(performance.now() - t0)} ms`; $("#tr-out").style.color = r.isError ? "var(--bad)" : "var(--fg)"; }
                 catch (e) { $("#tr-out").textContent = "✗ " + e.message; $("#tr-out").style.color = "var(--bad)"; }
             };
             $("#tr-run").onclick = run; $("#tr-args").onkeydown = e => { if (e.key === "Enter" && e.ctrlKey) { e.preventDefault(); e.stopPropagation(); run(); } };
             $("#tr-schema").onclick = () => { $("#tr-out").textContent = JSON.stringify(tool.inputSchema, null, 2); $("#tr-out").style.color = ""; };
-        }, { icon: "🔌" });
+        }, { icon: "" });
     }
     async function readResource(server, uri) {
         const s = servers[server];
-        try { const r = await s.client.request("resources/read", { uri }); VS.openCustom(`mcpres:${server}/${uri}`, uri.split("/").pop() || uri, el => { el.innerHTML = `<div class="runner"><div class="hint">MCP · ${esc(server)} · ${t("kaynak", "resource")}</div><h2 style="font-size:15px">${esc(uri)}</h2><pre>${esc((r.contents || []).map(c => c.text != null ? c.text : `[${c.mimeType || "blob"} ${c.blob ? c.blob.length + " b64" : ""}]`).join("\n\n"))}</pre></div>`; }, { icon: "📄" }); }
+        try { const r = await s.client.request("resources/read", { uri }); VS.openCustom(`mcpres:${server}/${uri}`, uri.split("/").pop() || uri, el => { el.innerHTML = `<div class="runner"><div class="hint">MCP · ${esc(server)} · ${t("kaynak", "resource")}</div><h2 style="font-size:15px">${esc(uri)}</h2><pre>${esc((r.contents || []).map(c => c.text != null ? c.text : `[${c.mimeType || "blob"} ${c.blob ? c.blob.length + " b64" : ""}]`).join("\n\n"))}</pre></div>`; }, { icon: "" }); }
         catch (e) { VS.toast(e.message, "err"); }
     }
 
@@ -170,14 +170,14 @@
     VS.viewDefs.push({ id: "mcp", title: () => "MCP " + t("SUNUCULARI", "SERVERS"), order: 4, key: "ctrl+shift+;", badge: () => VS.mcpConnected() || "",
         icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5"><path d="M9 7V3M15 7V3"/><path d="M6 7h12v4a6 6 0 0 1-12 0z"/><path d="M12 17v4"/></svg>',
         render(body, actions) {
-            actions.innerHTML = `<button title="${t("Sunucu ekle", "Add server")}" data-a="add">＋</button><button title="mcp.json" data-a="json">{ }</button><button title="${t("Hepsini bağla", "Connect all")}" data-a="all">⚡</button>`;
+            actions.innerHTML = `<button title="${t("Sunucu ekle", "Add server")}" data-a="add">＋</button><button title="mcp.json" data-a="json">{ }</button><button title="${t("Hepsini bağla", "Connect all")}" data-a="all"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M13 2 4 14h7l-1 8 9-12h-7z"/></svg></button>`;
             actions.onclick = e => { const a = e.target.closest("[data-a]"); if (!a) return; ({ add: () => VS.run("mcp.addServer"), json: () => VS.run("mcp.openConfig"), all: () => Object.keys(servers).forEach(connect) })[a.dataset.a](); };
             const list = Object.entries(servers);
-            body.innerHTML = (list.length ? list.map(([n, s]) => `<div class="srv"><div class="srv-h" data-n="${esc(n)}"><span class="tw" style="width:10px;color:var(--muted)">${open.has(n) ? "▾" : "▸"}</span><span class="dot ${s.state}"></span><b>${esc(n)}</b><small>${esc(s.cfg.type)}</small>${s.state === "on" ? `<button class="ib" data-x="${esc(n)}" title="${t("Bağlantıyı kes", "Disconnect")}">⏻</button><button class="ib" data-rf="${esc(n)}" title="${t("Yenile", "Refresh")}">⟳</button>` : `<button class="ib" data-c="${esc(n)}" title="${t("Bağlan", "Connect")}">▶</button>`}</div>
+            body.innerHTML = (list.length ? list.map(([n, s]) => `<div class="srv"><div class="srv-h" data-n="${esc(n)}"><span class="tw" style="width:10px;color:var(--muted)">${open.has(n) ? "▾" : "▸"}</span><span class="dot ${s.state}"></span><b>${esc(n)}</b><small>${esc(s.cfg.type)}</small>${s.state === "on" ? `<button class="ib" data-x="${esc(n)}" title="${t("Bağlantıyı kes", "Disconnect")}">⏻</button><button class="ib" data-rf="${esc(n)}" title="${t("Yenile", "Refresh")}">⟳</button>` : `<button class="ib" data-c="${esc(n)}" title="${t("Bağlan", "Connect")}"><svg width="12" height="12" viewBox="0 0 24 24" fill="currentColor"><path d="M7 4.5v15l12-7.5z"/></svg></button>`}</div>
                 ${open.has(n) ? `<div class="srv-b">${s.error ? `<p class="hint" style="color:var(--bad);margin-bottom:6px">${esc(s.error)}</p>` : ""}${s.info ? `<p class="hint" style="font-size:11px">${esc(s.info.name || "")} ${esc(s.info.version || "")}</p>` : ""}
-                    ${s.tools.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">${t("ARAÇLAR", "TOOLS")} (${s.tools.length})</p>${s.tools.map(x => `<button class="tool" data-tool="${esc(x.name)}" data-s="${esc(n)}" title="${esc(x.description || "")}">⚙ ${esc(x.name)} <small>${esc((x.description || "").slice(0, 60))}</small></button>`).join("")}` : s.state === "on" ? `<p class="hint">${t("Araç yok.", "No tools.")}</p>` : `<p class="hint">${s.cfg.type === "stdio" ? esc(s.cfg.command + " " + (s.cfg.args || []).join(" ")) : esc(s.cfg.url || "")}</p>`}
-                    ${s.resources.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">${t("KAYNAKLAR", "RESOURCES")}</p>${s.resources.slice(0, 60).map(x => `<button class="tool" data-res="${esc(x.uri)}" data-s="${esc(n)}">📄 ${esc(x.name || x.uri)}</button>`).join("")}` : ""}
-                    ${s.prompts.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">PROMPTS</p>${s.prompts.map(x => `<button class="tool" data-prompt="${esc(x.name)}" data-s="${esc(n)}" title="${esc(x.description || "")}">💬 ${esc(x.name)}</button>`).join("")}` : ""}
+                    ${s.tools.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">${t("ARAÇLAR", "TOOLS")} (${s.tools.length})</p>${s.tools.map(x => `<button class="tool" data-tool="${esc(x.name)}" data-s="${esc(n)}" title="${esc(x.description || "")}">${esc(x.name)} <small>${esc((x.description || "").slice(0, 60))}</small></button>`).join("")}` : s.state === "on" ? `<p class="hint">${t("Araç yok.", "No tools.")}</p>` : `<p class="hint">${s.cfg.type === "stdio" ? esc(s.cfg.command + " " + (s.cfg.args || []).join(" ")) : esc(s.cfg.url || "")}</p>`}
+                    ${s.resources.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">${t("KAYNAKLAR", "RESOURCES")}</p>${s.resources.slice(0, 60).map(x => `<button class="tool" data-res="${esc(x.uri)}" data-s="${esc(n)}">${esc(x.name || x.uri)}</button>`).join("")}` : ""}
+                    ${s.prompts.length ? `<p class="hint" style="font-size:10.5px;margin-top:6px">PROMPTS</p>${s.prompts.map(x => `<button class="tool" data-prompt="${esc(x.name)}" data-s="${esc(n)}" title="${esc(x.description || "")}">${esc(x.name)}</button>`).join("")}` : ""}
                     <div class="row" style="margin-top:6px"><button class="btn sec" style="height:22px;font-size:11px" data-del="${esc(n)}">${t("Kaldır", "Remove")}</button></div></div>` : ""}</div>`).join("")
                 : `<div class="pad col"><p class="hint">${t("Henüz MCP sunucusu yok. MCP, yapay zekâya araç (dosya, veritabanı, GitHub, tarayıcı…) bağlamanın standart yolu.", "No MCP servers yet. MCP is the standard way to plug tools (files, databases, GitHub, browsers…) into AI.")}</p><button class="btn w" data-add>＋ ${t("Sunucu Ekle", "Add Server")}</button><button class="btn sec w" data-json>{ } mcp.json</button></div>`)
                 + `<div class="pad col"><p class="hint" style="font-size:11px">${t("Bağlı sunucuların araçları AI sohbetinde (Ctrl+Alt+I) otomatik kullanılabilir.", "Tools from connected servers are available in AI chat (Ctrl+Alt+I).")}${N ? "" : " " + t("stdio (npx/uvx) sunucuları için masaüstü uygulamasını kullan.", "Use the desktop app for stdio (npx/uvx) servers.")}</p>${VS.ws && VS.ws.files.includes(".vscode/mcp.json") ? `<button class="btn sec w" data-imp>${t("Çalışma alanındaki .vscode/mcp.json'u içe aktar", "Import workspace .vscode/mcp.json")}</button>` : ""}</div>`;
@@ -204,14 +204,14 @@
     }
     VS.cmd("mcp.addServer", () => "MCP: " + t("Sunucu Ekle…", "Add Server…"), async () => {
         const kind = await VS.pick([
-            { label: "⌨ stdio — " + t("Komut (npx, uvx, node, python…)", "Command (npx, uvx, node, python…)"), detail: N ? "" : t("sadece masaüstü", "desktop only"), value: "stdio" },
-            { label: "🌐 HTTP — " + t("Uzak sunucu (Streamable HTTP)", "Remote server (Streamable HTTP)"), value: "http" },
-            { label: "📦 " + t("Hazır: Dosya sistemi", "Preset: Filesystem"), detail: "@modelcontextprotocol/server-filesystem", value: "p-fs" },
-            { label: "📦 " + t("Hazır: Hafıza (bilgi grafiği)", "Preset: Memory (knowledge graph)"), detail: "@modelcontextprotocol/server-memory", value: "p-mem" },
-            { label: "📦 " + t("Hazır: Sıralı düşünme", "Preset: Sequential thinking"), detail: "@modelcontextprotocol/server-sequential-thinking", value: "p-seq" },
-            { label: "📦 " + t("Hazır: Web getir (fetch)", "Preset: Fetch"), detail: "uvx mcp-server-fetch", value: "p-fetch" },
-            { label: "📦 " + t("Hazır: Playwright tarayıcı", "Preset: Playwright browser"), detail: "@playwright/mcp", value: "p-pw" },
-            { label: "📋 " + t("JSON yapıştır (Claude Desktop / VS Code biçimi)", "Paste JSON (Claude Desktop / VS Code format)"), value: "paste" },
+            { label: "stdio — " + t("Komut (npx, uvx, node, python…)", "Command (npx, uvx, node, python…)"), detail: N ? "" : t("sadece masaüstü", "desktop only"), value: "stdio" },
+            { label: "HTTP — " + t("Uzak sunucu (Streamable HTTP)", "Remote server (Streamable HTTP)"), value: "http" },
+            { label: "" + t("Hazır: Dosya sistemi", "Preset: Filesystem"), detail: "@modelcontextprotocol/server-filesystem", value: "p-fs" },
+            { label: "" + t("Hazır: Hafıza (bilgi grafiği)", "Preset: Memory (knowledge graph)"), detail: "@modelcontextprotocol/server-memory", value: "p-mem" },
+            { label: "" + t("Hazır: Sıralı düşünme", "Preset: Sequential thinking"), detail: "@modelcontextprotocol/server-sequential-thinking", value: "p-seq" },
+            { label: "" + t("Hazır: Web getir (fetch)", "Preset: Fetch"), detail: "uvx mcp-server-fetch", value: "p-fetch" },
+            { label: "" + t("Hazır: Playwright tarayıcı", "Preset: Playwright browser"), detail: "@playwright/mcp", value: "p-pw" },
+            { label: "" + t("JSON yapıştır (Claude Desktop / VS Code biçimi)", "Paste JSON (Claude Desktop / VS Code format)"), value: "paste" },
         ], t("Ne tür bir MCP sunucusu?", "What kind of MCP server?"));
         if (!kind) return;
         const presets = { "p-fs": ["filesystem", { type: "stdio", command: "npx", args: ["-y", "@modelcontextprotocol/server-filesystem", (VS.ws && VS.ws.fs.root) || "."] }], "p-mem": ["memory", { type: "stdio", command: "npx", args: ["-y", "@modelcontextprotocol/server-memory"] }], "p-seq": ["sequential-thinking", { type: "stdio", command: "npx", args: ["-y", "@modelcontextprotocol/server-sequential-thinking"] }], "p-fetch": ["fetch", { type: "stdio", command: "uvx", args: ["mcp-server-fetch"] }], "p-pw": ["playwright", { type: "stdio", command: "npx", args: ["-y", "@playwright/mcp@latest"] }] };

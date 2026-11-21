@@ -41,9 +41,15 @@
     }
 
     // ---- sohbet döngüsü ----
+    let mode = VS.store.get("aiMode", "assist");          // "assist" = ücretsiz Kod Asistanı, "claude" = kendi API anahtarınla
+    const useClaude = () => mode === "claude" && !!key();
     async function send(textIn) {
         if (busy || !textIn.trim()) return;
-        if (!key()) { askKey(); return; }
+        if (!useClaude()) {
+            view.push({ k: "u", text: textIn });
+            let cev; try { cev = VS.assistAnswer ? VS.assistAnswer(textIn) : "VEMTRIO Topluluk AI yüklenemedi."; } catch (e) { cev = String(e.message || e); }
+            view.push({ k: "a", text: cev }); draw(); return;
+        }
         busy = true; stopFlag = false;
         const ctx = VS.activeTab() && VS.activeTab().model ? `\n\n[${t("Açık dosya", "Open file")}: ${VS.activeTab().path}]` : "";
         history.push({ role: "user", content: textIn + ctx });
@@ -71,7 +77,7 @@
                 if (resp.stop_reason !== "tool_use" || !uses.length) { if (resp.stop_reason === "max_tokens") view.push({ k: "err", text: t("Yanıt uzunluk sınırında kesildi.", "Response hit the length limit.") }); break; }
                 const results = [];
                 for (const u of uses) {
-                    view.push({ k: "t", text: `⚙ ${u.name} ${JSON.stringify(u.input).slice(0, 220)}` }); draw();
+                    view.push({ k: "t", text: `${u.name} ${JSON.stringify(u.input).slice(0, 220)}` }); draw();
                     const risky = u.name !== "workspace_list_files" && u.name !== "workspace_read_file";
                     if (risky && VS.settings["ai.confirmTools"] && !(await VS.confirm(t(`AI şu aracı çalıştırmak istiyor: ${u.name}. İzin verilsin mi?`, `AI wants to run tool: ${u.name}. Allow?`)))) { results.push({ type: "tool_result", tool_use_id: u.id, content: "The user denied this tool call.", is_error: true }); view.push({ k: "t", text: "✕ " + t("reddedildi", "denied") }); continue; }
                     try {
@@ -102,28 +108,44 @@
     function fmt(s) {
         const parts = s.split(/```(\w*)\n?([\s\S]*?)```/g); let h = "";
         for (let i = 0; i < parts.length; i++) { if (i % 3 === 0) h += esc(parts[i]).replace(/`([^`]+)`/g, "<code>$1</code>").replace(/\*\*([^*]+)\*\*/g, "<b>$1</b>"); else if (i % 3 === 2) h += `<pre>${esc(parts[i])}</pre>`; }
-        return h;
+        const bt = (a, l) => `<button class="btn sec" style="height:24px;font-size:11px;margin:6px 4px 0 0" ${a}>${l}</button>`;
+        return h.replace(/\[\[ekle:([\w-]+)\]\]/g, (m, id) => `<button class="btn" style="height:24px;font-size:11px;margin-top:6px" data-pool="${id}">${t("Koda ekle", "Insert into code")}</button>`)
+            .replace(/\[\[cai:([\w-]+)\]\]/g, (m, id) => bt(`data-caip="${id}"`, t("Projeyi incele", "Explore project") + (VS.communityIndex().find(p => p.id === id) ? ": " + esc(VS.communityIndex().find(p => p.id === id).title) : "")))
+            .replace(/\[\[remix:([\w-]+)\]\]/g, (m, id) => bt(`data-remix="${id}"`, "Remix"))
+            .replace(/\[\[eklefn:([\w-]+):([\w$]+)\]\]/g, (m, id, fn) => `<button class="btn" style="height:24px;font-size:11px;margin:6px 4px 0 0" data-eklefn="${id}:${fn}">${t("Koda ekle", "Insert")} ${fn}()</button>`);
     }
     function draw() {
         if (VS.auxMode() !== "ai") return;
         const box = $("#ai-chat"); if (!box) return;
-        box.innerHTML = view.length ? view.map(m => `<div class="msg ${m.k}">${m.k === "a" ? fmt(m.text) : esc(m.text)}</div>`).join("") : `<div class="hint" style="padding:8px;line-height:1.6">${t("Merhaba! Kod yazdırabilir, dosyalarını düzenletebilir, bağlı MCP sunucularının araçlarını kullandırabilirsin.", "Hi! Ask me to write code, edit your files, or use tools from your connected MCP servers.")}<br><br>${t("Örnek:", "Try:")} <i>"${t("index.html'e zıplayan bir top oyunu yap", "make a bouncing ball game in index.html")}"</i><br><br>${t("Araçlar", "Tools")}: ${toolList().tools.length}${key() ? "" : `<br><br><button class="btn" data-key>${t("API anahtarı gir", "Enter API key")}</button>`}</div>`;
+        box.innerHTML = view.length ? view.map(m => `<div class="msg ${m.k}">${m.k === "a" ? fmt(m.text) : esc(m.text)}</div>`).join("") : useClaude()
+            ? `<div class="hint" style="padding:8px;line-height:1.6">${t("Claude modu: kod yazdırabilir, dosyalarını düzenletebilir, bağlı MCP araçlarını kullandırabilirsin.", "Claude mode: write code, edit files, use connected MCP tools.")}<br><br>${t("Araçlar", "Tools")}: ${toolList().tools.length}</div>`
+            : `<div class="hint" style="padding:8px;line-height:1.7"><b style="color:var(--fg)">VEMTRIO Topluluk AI</b><br>${t("Topluluktaki projelerin nasıl çalıştığını anlatırım, oradan örnek kod gösteririm, kodundaki hataları açıklarım ve VEMTRIO Code'un kullanımını bilirim. Hazır sorular:", "I explain how community projects work, show example code from them, explain errors in your code and know how VEMTRIO Code works. Quick questions:")}<br><br>${(VS.assistChips ? VS.assistChips() : ["koddaki hata ne?"]).map(x => `<button class="btn sec" style="height:24px;font-size:11px;margin:2px" data-ask="${esc(x)}">${esc(x)}</button>`).join("")}</div>`;
         box.scrollTop = box.scrollHeight;
         const b = $("#ai-send"); if (b) { b.textContent = busy ? "■ " + t("Durdur", "Stop") : t("Gönder", "Send") + " ↵"; }
     }
     VS.aiInsert = s => { VS.run("ai.toggle", true); setTimeout(() => { const ta = $("#ai-in"); if (ta) { ta.value = s; ta.focus(); } }, 50); };
     function openAI(force) {
         if (VS.auxMode() === "ai" && !force) return VS.closeAux();
-        const ui = VS.showAux("ai", "✦ AI · " + (VS.settings["ai.model"] || ""), true);
-        ui.head.innerHTML = `<button class="ib" data-a="new" title="${t("Yeni sohbet", "New chat")}">＋</button><button class="ib" data-a="key" title="${t("API anahtarı", "API key")}">🔑</button><button class="ib" data-a="x">✕</button>`;
-        ui.head.onclick = e => { const a = e.target.closest("[data-a]"); if (!a) return; if (a.dataset.a === "new") { history = []; view = []; draw(); } if (a.dataset.a === "key") askKey(); if (a.dataset.a === "x") VS.closeAux(); };
-        ui.body.innerHTML = `<div class="chat" id="ai-chat"></div><div class="chat-in"><textarea id="ai-in" placeholder="${t("Bir şey sor… (Enter gönderir, Shift+Enter yeni satır)", "Ask anything… (Enter to send, Shift+Enter newline)")}"></textarea><div class="row"><span class="hint" style="font-size:11px;flex:1">${esc(VS.settings["ai.model"])} · ${t("araçlar", "tools")}: ${toolList().tools.length}</span><button class="btn" id="ai-send"></button></div></div>`;
+        const ui = VS.showAux("ai", "VEMTRIO TOPLULUK AI", true);
+        ui.head.innerHTML = `<select id="ai-mode" style="width:auto;height:22px;padding:0 4px;font-size:11px"><option value="assist" ${mode === "assist" ? "selected" : ""}>VEMTRIO Topluluk AI</option><option value="claude" ${mode === "claude" ? "selected" : ""}>Claude (${t("API anahtarı", "API key")})</option></select><button class="ib" data-a="new" title="${t("Yeni sohbet", "New chat")}">＋</button><button class="ib" data-a="x" title="${t("Kapat", "Close")}">✕</button>`;
+        ui.head.onclick = e => { const a = e.target.closest("[data-a]"); if (!a) return; if (a.dataset.a === "new") { history = []; view = []; draw(); } if (a.dataset.a === "x") VS.closeAux(); };
+        ui.head.onchange = async e => { if (e.target.id !== "ai-mode") return; mode = e.target.value; VS.store.set("aiMode", mode); if (mode === "claude" && !key()) await askKey(); if (mode === "claude" && !key()) { mode = "assist"; e.target.value = "assist"; VS.store.set("aiMode", mode); } openAI(true); };
+        ui.body.innerHTML = `<div class="chat" id="ai-chat"></div><div class="chat-in"><textarea id="ai-in" placeholder="${t("Bir şey sor… (Enter gönderir, Shift+Enter yeni satır)", "Ask anything… (Enter to send, Shift+Enter newline)")}"></textarea><div class="row"><span class="hint" style="font-size:11px;flex:1">${useClaude() ? esc(VS.settings["ai.model"]) + " · " + t("araçlar", "tools") + ": " + toolList().tools.length : "VEMTRIO Topluluk AI"}</span><button class="btn" id="ai-send"></button></div></div>`;
         const ta = $("#ai-in");
         ta.onkeydown = e => { if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); e.stopPropagation(); const v = ta.value; ta.value = ""; send(v); } };
         $("#ai-send").onclick = () => { if (busy) { stopFlag = true; return; } const v = ta.value; ta.value = ""; send(v); };
-        ui.body.onclick = e => { if (e.target.closest("[data-key]")) askKey(); };
+        ui.body.onclick = e => {
+            if (e.target.closest("[data-key]")) askKey();
+            const q = e.target.closest("[data-ask]"); if (q) send(q.dataset.ask);
+            const cp = e.target.closest("[data-caip]"); if (cp) return VS.openCommunityProject(cp.dataset.caip);
+            const rx = e.target.closest("[data-remix]"); if (rx) return VS.remix(rx.dataset.remix);
+            const ef = e.target.closest("[data-eklefn]"); if (ef) { const [pid, fn] = ef.dataset.eklefn.split(":"); return VS.caiInsert(pid, fn); }
+            const pl = e.target.closest("[data-pool]"); if (pl) { const p = (VS.codePool || []).find(x => x.id === pl.dataset.pool); if (p) { VS.run("pool.show"); setTimeout(() => { const b = document.querySelector(`[data-ekle="${p.id}"]`); if (b) b.click(); else VS.toast(p.title, ""); }, 50); } }
+        };
         draw(); setTimeout(() => ta.focus(), 30);
+        if (VS.loadCommunityIndex) VS.loadCommunityIndex().then(() => { if (!view.length) draw(); });
     }
+    VS.assistAsk = (q, line) => { if (mode === "claude" && !key()) mode = "assist"; openAI(true); setTimeout(() => send(String(q) + (line ? ` (${t("satır", "line")} ${line})` : "")), 30); };
     VS.viewDefs = VS.viewDefs || [];
     VS.cmd("ai.toggle", () => t("AI Sohbeti Aç/Kapat", "Toggle AI Chat"), openAI, "ctrl+alt+i", "AI");
     VS.cmd("ai.setKey", () => t("AI: API Anahtarını Ayarla", "AI: Set API Key"), askKey, null, "AI");

@@ -53,7 +53,7 @@
     const SKIP = /(^|\/)(node_modules|\.git|__pycache__|\.vs|\.next|dist|build|bin|obj)(\/|$)/;
     // 1) Tarayıcı belleği (localStorage)
     class MemFS {
-        constructor(key) { this.key = "mem:" + key; this.kind = "mem"; this.name = t("Tarayıcı Çalışma Alanı", "Browser Workspace"); this.d = VS.store.get(this.key, null) || { files: {}, dirs: [] }; }
+        constructor(key) { this.key = "mem:" + key; this.kind = "mem"; const pr = (VS.store.get("projects", []) || []).find(p => p.key === key); this.name = pr ? pr.name : t("Tarayıcı Çalışma Alanı", "Browser Workspace"); this.d = VS.store.get(this.key, null) || { files: {}, dirs: [] }; }
         save() { VS.store.set(this.key, this.d); }
         async list() { return { files: Object.keys(this.d.files).sort(), dirs: [...new Set([...this.d.dirs, ...Object.keys(this.d.files).flatMap(f => { const p = f.split("/"); return p.slice(0, -1).map((_, i) => p.slice(0, i + 1).join("/")); })])].sort() }; }
         async read(p) { if (!(p in this.d.files)) throw new Error("ENOENT " + p); return this.d.files[p]; }
