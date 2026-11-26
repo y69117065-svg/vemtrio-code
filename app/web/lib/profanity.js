@@ -15,6 +15,7 @@
         "vajina", "vagina", "masturb", "mastrb", "orgazm", "orgasm", "erotik", "erotic", "hentai", "nudes", "titty", "blowjob", "handjob", "cumshot", "onlyfans", "pornhub", "xvideos", "xhamster"];
     const RAW_TR_PREFIX = ["piç", "götveren", "götlek"];                         // Türkçe harfiyle (piçlik)
     const RAW_TR_EXACT = new Set(["göt", "götü", "götün", "götünü", "götüne", "göte", "götte", "götten", "götlü"]);   // "götürdü" masum kalsın
+    const ASCII_TR_EXACT = new Set(["pici", "picin", "pice", "picler", "piclik", "piclikler", "gotu", "gotun", "gotunu", "gotune", "gotlu", "gote", "gotte", "gotune", "gotunden"]);
     const RAW_PREFIX = ["nigger", "nigga", "faggot"];        // harf tekrarı silinmeden bakılır (Niger masum kalsın)
     const ALLOW = new Set(["shitake", "shiitake", "sikke", "sikkeler", "dickens", "cocktail", "cockpit"]);
     const EXACT = new Set(["amk", "aq", "amq", "mk", "sg", "sik", "dick", "cock", "twat", "kys", "fag", "fu", "stfu", "wtf",
@@ -22,6 +23,28 @@
         "seks", "seksi", "sekse", "seksin", "sekste", "seksten", "seksle", "sex", "sexy", "seksuel", "sexual", "nude", "nsfw", "tits", "boob", "boobs", "horny", "sakso", "saksocu", "penis", "penisi", "penise", "penisin", "memeler", "memelerini", "goguslerini"]);
     const SUBSTR = ["fuck", "orospu", "siktir", "amcik", "pezevenk", "motherf"];     // harfler bitişik yazılmış uzun hileler için
 
+    // Görünmez karakterler (sıfır genişlik, yön işaretleri, yumuşak tire, varyasyon seçicileri, Hangul dolgu) ve
+    // Kiril/Yunan harf taklitleri: "оrospu" (Kiril о), "s\u200Biktir" gibi hileler için
+    const INVIS = /[\u00AD\u034F\u061C\u115F\u1160\u17B4\u17B5\u180B-\u180F\u200B-\u200F\u202A-\u202E\u2060-\u206F\u3164\uFE00-\uFE0F\uFEFF\uFFA0]/g;
+    const HOMO = { "а": "a", "е": "e", "о": "o", "р": "p", "с": "c", "у": "y", "х": "x", "к": "k", "м": "m", "т": "t", "н": "h", "в": "b", "і": "i", "ї": "i", "ј": "j", "ѕ": "s", "һ": "h", "ԁ": "d", "ɡ": "g",
+        "А": "A", "Е": "E", "О": "O", "Р": "P", "С": "C", "У": "Y", "Х": "X", "К": "K", "М": "M", "Т": "T", "Н": "H", "В": "B", "І": "I", "Ј": "J", "Ѕ": "S",
+        "α": "a", "ε": "e", "ο": "o", "ρ": "p", "τ": "t", "υ": "u", "ν": "v", "κ": "k", "ι": "i", "χ": "x", "Α": "A", "Β": "B", "Ε": "E", "Ζ": "Z", "Η": "H", "Ι": "I", "Κ": "K", "Μ": "M", "Ν": "N", "Ο": "O", "Ρ": "P", "Τ": "T", "Υ": "Y", "Χ": "X" };
+    const HOMO_RE = new RegExp("[" + Object.keys(HOMO).join("") + "]", "g");
+    // Metni normalleştirir ve her karakterin asıl metindeki yerini tutar (maskeleme doğru yere yapılsın)
+    function norm(s) {
+        let t = "", idx = [];
+        for (let i = 0; i < s.length; i++) {
+            const c = s[i];
+            if (INVIS.test(c)) { INVIS.lastIndex = 0; continue; }
+            INVIS.lastIndex = 0;
+            let n = HOMO[c] || c;
+            // tam genişlikli harfler (ｓｉｋ) ve benzer uyumluluk biçimleri — tek karaktere dönüşüyorsa
+            if (!HOMO[c] && c.charCodeAt(0) > 127) { const k = c.normalize("NFKC"); if (k.length === 1) n = k; }
+            t += n; idx.push(i);
+        }
+        idx.push(s.length);
+        return { t, idx };
+    }
     const LEET = { "0": "o", "1": "i", "3": "e", "4": "a", "5": "s", "7": "t", "8": "b", "@": "a", "$": "s", "!": "i", "|": "i" };
     const FOLD = { "ç": "c", "ğ": "g", "ö": "o", "ş": "s", "ü": "u", "â": "a", "î": "i", "û": "u" };
     const lower = (w) => w.replace(/İ/g, "i").replace(/I/g, "ı").toLowerCase();
@@ -38,12 +61,13 @@
         if (k.length < 2 && !EXACT.has(k)) return false;
         if (EXACT.has(k) || EXACT.has(rf)) return true;
         if (RAW_TR_EXACT.has(raw) || RAW_TR_PREFIX.some(p => raw.startsWith(p))) return true;
+        if (ASCII_TR_EXACT.has(raw) || ASCII_TR_EXACT.has(rf)) return true;
         if (RAW_PREFIX.some(p => rf.startsWith(p))) return true;
         return TRP.some(p => k.startsWith(p)) || ENP.some(p => k.startsWith(p));
     }
 
     function check(text) {
-        const s = String(text || "");
+        const orig = String(text || ""), N = norm(orig), s = N.t;
         const tokRe = /[A-Za-z0-9ÇĞİÖŞÜçğıöşüÂÎÛâîû@$!|]+/g;
         const toks = [];
         let m;
@@ -66,7 +90,9 @@
             const squashed = keyOf(s.replace(/[^A-Za-z0-9ÇĞİÖŞÜçğıöşüÂÎÛâîû@$!|]/g, ""));
             if (SUB.some(p => squashed.includes(p))) unlocated = true;
         }
-        return { clean: !hits.length && !unlocated, hits, unlocated };
+        // konumları asıl metne çevir (görünmez karakterler atlanmıştı)
+        const back = hits.map(h => ({ s: N.idx[h.s], e: N.idx[h.e - 1] + 1 }));
+        return { clean: !back.length && !unlocated, hits: back, unlocated };
     }
 
     function mask(text) {
@@ -88,9 +114,11 @@
     const STRICT_EDGE = ["amk", "amq"];   // kısa olanlar sadece ismin başında ya da sonunda ("amkcocugu", "selamk"... değil)
     function isCleanName(name) {
         if (!check(name).clean) return false;
-        const raw = fold(lower(String(name || ""))).replace(/ı/g, "i").replace(/[^a-z0-9]/g, "");
+        const raw = fold(lower(norm(String(name || "")).t)).replace(/ı/g, "i").replace(/[^a-z0-9]/g, "");
         if (STRICT_SUB.some(p => raw.includes(p) || collapse(p).length >= 6 && collapse(raw).includes(collapse(p)))) return false;
-        return !STRICT_EDGE.some(p => raw.startsWith(p) || (raw.endsWith(p) && raw.length <= p.length + 3));   // başta: her zaman; sonda: sadece kısa isimlerde
+        // başta ve sonda her zaman (uzun isimlerin sonuna "amk" eklemek de engellenir); collapse ile "ammk" de yakalanır
+        const cr = collapse(raw);
+        return !STRICT_EDGE.some(p => raw.startsWith(p) || raw.endsWith(p) || cr.startsWith(p) || cr.endsWith(p));
     }
-    return { check, mask, isClean: (t) => check(t).clean, isCleanName };
+    return { check, mask, isClean: (t) => check(t).clean, isCleanName, normalize: (t) => norm(String(t || "")).t };
 });

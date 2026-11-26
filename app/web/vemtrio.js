@@ -26,7 +26,8 @@
     }
     window.addEventListener("message", function (e) {
         var m = e.data;
-        if (!m || !m.__vemtrioReply || !pending[m.id]) return;
+        // Yalnızca oyunu barındıran VEMTRIO sayfasından gelen cevaplar kabul edilir (başka pencere/iframe sahte cevap veremez)
+        if (e.source !== window.parent || !m || !m.__vemtrioReply || !pending[m.id]) return;
         var r = pending[m.id]; delete pending[m.id]; r(m.data || {});
     });
     window.Vemtrio = {

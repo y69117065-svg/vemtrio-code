@@ -32,7 +32,10 @@
     const isAllowed = (n) => ALLOWED_EXT.includes(extOf(n)) || STD_NAMES.test(baseName(n));
     // Güvenilir CDN'ler: sadece "dış script" uyarısından muaf (indirme/yönlendirme kuralları yine çalışır,
     // çünkü jsdelivr/unpkg herkesin yüklediği dosyaları da sunar)
-    const TRUSTED_CDN = /<script[^>]+src\s*=\s*["']?(https?:)?\/\/(fonts\.googleapis\.com|cdnjs\.cloudflare\.com|unpkg\.com|cdn\.jsdelivr\.net)\//i;
+    // jsdelivr/unpkg herkesin paket yükleyebildiği yerler: yalnız sürümü sabitlenmiş npm paketi (paket@1.2.3) muaf; gh/, combine/ vb. değil
+    const TRUSTED_CDN = /<script[^>]+src\s*=\s*["']?(https?:)?\/\/(fonts\.googleapis\.com\/|cdnjs\.cloudflare\.com\/ajax\/libs\/|unpkg\.com\/(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+\/|cdn\.jsdelivr\.net\/npm\/(@[\w.-]+\/)?[\w.-]+@\d+\.\d+\.\d+\/)/i;
+    // SVG içinde çalışabilen kod: <script>, olay öznitelikleri (onload= ...), <foreignObject> (HTML gömme), javascript: bağlantıları
+    const SVG_ACTIVE = /<script\b|<foreignObject\b|\son[a-z]+\s*=|(href|xlink:href)\s*=\s*["']?\s*javascript:|<(iframe|embed|object)\b|<!ENTITY/i;
     // Oyun hareket tuşları (WASD, oklar, boşluk) karşılaştırması: çok oyunculu oyunlarda normaldir, keylogger değildir
     const GAME_KEYS = /(["'`](Arrow(Up|Down|Left|Right)|Key[WASD]|[wasdWASD ]|Space|Spacebar|Enter|Escape|Shift)["'`])/;
     const CHUNK = 20000, OVERLAP = 400;
@@ -55,6 +58,10 @@
             if (/\0/.test(content)) { add(name, 0, "binary", "crit", "Metin değil, ikili (binary) içerik.", "Binary content, not text.", name); continue; }
             const L = content.split(/\r?\n/);
             lines += L.length;
+            if (ext === "svg" || (ext === "xml" && /<svg\b/i.test(content))) {
+                const m = content.match(SVG_ACTIVE);
+                if (m) add(name, content.slice(0, m.index).split("\n").length, "svg_active", "crit", "SVG dosyasında çalışabilir kod var (script / onload / foreignObject / javascript:).", "SVG contains executable content (script / event handler / foreignObject / javascript:).", m[0]);
+            }
             const perRule = {};
             const near = (i, re, span = 6) => { for (let j = Math.max(0, i - span); j <= Math.min(L.length - 1, i + span); j++) if (re.test(L[j])) return true; return false; };
             L.forEach((ln, i) => {

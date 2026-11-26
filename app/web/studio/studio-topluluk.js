@@ -131,6 +131,8 @@
         return `Bunu tam anlayamadım. Ben ${AD}'yım; kodlama, VEMTRIO Code ve topluluk projeleri hakkında yardımcı olurum. Şunları dene:\n• "Toplulukta hangi oyunlar var?"\n• "Klavye ile hareket örneği göster"\n• "koddaki hata ne?"\n• "Projemi nasıl paylaşırım?"`;
     };
     VS.assistChips = () => {
+        // Masaüstü uygulaması yerelde çalışır: topluluğa göz atma önerileri çıkmaz (yenilikler uygulama güncellemesiyle gelir)
+        if (VS.native) return [t("Çarpışma kontrolü örneği göster", "Show a collision example"), t("koddaki hata ne?", "what's wrong in my code?"), t("Önizleme nasıl açılır?", "How do I open preview?"), t("Kod havuzunda ne var?", "What's in the code pool?")];
         const ilk = (INDEX || []).find(p => p.cat === "game") || (INDEX || [])[0];
         return [t("Toplulukta hangi projeler var?", "What projects are in the community?"), ...(ilk ? [ilk.title + t(" nasıl çalışıyor?", " — how does it work?")] : []), t("Çarpışma kontrolü örneği göster", "Show a collision example"), t("koddaki hata ne?", "what's wrong in my code?"), t("Önizleme nasıl açılır?", "How do I open preview?"), t("Projemi nasıl paylaşırım?", "How do I share my project?")];
     };

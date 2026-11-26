@@ -280,10 +280,320 @@ document.addEventListener("click", () => bip(660));
 </script>
 `);
 
+    // ---------- HTML (ek) ----------
+    add("HTML", "html-menu", "Üst menü (navbar)", "Logo solda, bağlantılar sağda. Telefonda alt alta dizilir.", "html",
+`<nav class="menu">
+    <a class="logo" href="#">Oyunum</a>
+    <div class="baglantilar">
+        <a href="#oyna">Oyna</a>
+        <a href="#nasil">Nasıl oynanır</a>
+        <a href="#skor">Skorlar</a>
+    </div>
+</nav>
+<style>
+    .menu { display: flex; justify-content: space-between; align-items: center; padding: 14px 20px; background: #15181d; }
+    .menu a { color: #e5e7eb; text-decoration: none; margin-left: 16px; }
+    .menu .logo { font-weight: 700; margin-left: 0; }
+    @media (max-width: 600px) { .menu { flex-direction: column; gap: 8px; } }
+</style>
+`);
+    add("HTML", "html-modal", "Açılır pencere (modal)", "Butona basınca ortada pencere açılır, dışına ya da ✕'e basınca kapanır.", "html",
+`<button id="ac">Pencereyi aç</button>
+<div id="modal" class="modal" hidden>
+    <div class="kutu">
+        <button id="kapat" class="x">✕</button>
+        <h2>Merhaba!</h2>
+        <p>Bu bir açılır pencere.</p>
+    </div>
+</div>
+<style>
+    .modal { position: fixed; inset: 0; background: rgba(0,0,0,.6); display: grid; place-items: center; }
+    .modal[hidden] { display: none; }
+    .kutu { position: relative; background: #1b1f25; color: #fff; padding: 24px; border-radius: 10px; min-width: 260px; }
+    .x { position: absolute; top: 8px; right: 8px; background: none; border: 0; color: #fff; cursor: pointer; }
+</style>
+<script>
+    const modal = document.getElementById("modal");
+    document.getElementById("ac").onclick = () => modal.hidden = false;
+    document.getElementById("kapat").onclick = () => modal.hidden = true;
+    modal.onclick = (e) => { if (e.target === modal) modal.hidden = true; };
+    document.addEventListener("keydown", (e) => { if (e.key === "Escape") modal.hidden = true; });
+</script>
+`);
+    add("HTML", "html-tablo", "Tablo (skor listesi)", "Başlıklı, satırları renkli bir tablo.", "html",
+`<table class="tablo">
+    <thead><tr><th>#</th><th>Oyuncu</th><th>Skor</th></tr></thead>
+    <tbody>
+        <tr><td>1</td><td>Ayşe</td><td>1200</td></tr>
+        <tr><td>2</td><td>Mehmet</td><td>950</td></tr>
+        <tr><td>3</td><td>Can</td><td>700</td></tr>
+    </tbody>
+</table>
+<style>
+    .tablo { border-collapse: collapse; min-width: 280px; }
+    .tablo th, .tablo td { padding: 8px 12px; border-bottom: 1px solid #333; text-align: left; }
+    .tablo tbody tr:nth-child(odd) { background: rgba(255,255,255,.04); }
+</style>
+`);
+    add("HTML", "html-video", "Video ve ses", "Kontrollü video / ses oynatıcı.", "html",
+`<video src="video.mp4" controls width="480" poster="kapak.png"></video>
+<audio src="muzik.mp3" controls loop></audio>
+`);
+
+    // ---------- CSS (ek) ----------
+    add("CSS", "css-flex", "Yan yana dizme (flexbox)", "Öğeleri yan yana, aralıklı ve ortalı diz.", "css",
+`.satir {
+    display: flex;
+    gap: 12px;               /* aradaki boşluk */
+    align-items: center;     /* dikey ortala */
+    justify-content: space-between; /* yatay dağıt: start | center | end | space-between */
+    flex-wrap: wrap;         /* sığmazsa alt satıra geç */
+}
+`);
+    add("CSS", "css-karanlik", "Karanlık / aydınlık tema", "Değişkenlerle tema; body'ye .acik sınıfı eklenince aydınlık olur.", "css",
+`:root {
+    --arka: #0f1115;
+    --yazi: #e5e7eb;
+    --vurgu: #86b2dc;
+}
+body.acik {
+    --arka: #ffffff;
+    --yazi: #111111;
+    --vurgu: #2563eb;
+}
+body { background: var(--arka); color: var(--yazi); transition: background .3s, color .3s; }
+a, button { color: var(--vurgu); }
+/* JavaScript: document.body.classList.toggle("acik"); */
+`);
+    add("CSS", "css-gradyan-yazi", "Renk geçişli yazı", "Başlığa renk geçişi (gradient) ver.", "css",
+`.parlak {
+    background: linear-gradient(90deg, #86b2dc, #df93a3, #c8a865);
+    -webkit-background-clip: text;
+    background-clip: text;
+    color: transparent;
+    font-weight: 800;
+}
+`);
+    add("CSS", "css-hover", "Üzerine gelince büyüme", "Kart ya da butonun üstüne gelince hafifçe büyür ve gölgelenir.", "css",
+`.buyu {
+    transition: transform .2s ease, box-shadow .2s ease;
+}
+.buyu:hover {
+    transform: translateY(-4px) scale(1.03);
+    box-shadow: 0 12px 30px rgba(0, 0, 0, .35);
+}
+`);
+
+    // ---------- JavaScript (ek) ----------
+    add("JavaScript", "js-dom-olustur", "Sayfaya öğe ekleme", "JavaScript ile yeni bir kart oluşturup sayfaya ekle.", "javascript",
+`function kartEkle(baslik, yazi) {
+    const kart = document.createElement("div");
+    kart.className = "kart";
+    const h = document.createElement("h3");
+    h.textContent = baslik;          // textContent: güvenli (HTML çalıştırmaz)
+    const p = document.createElement("p");
+    p.textContent = yazi;
+    kart.append(h, p);
+    document.body.appendChild(kart);
+    return kart;
+}
+kartEkle("Yeni kart", "JavaScript ile eklendi.");
+`);
+    add("JavaScript", "js-nesne", "Nesneler (object)", "Bir oyuncunun bilgilerini tek değişkende tut.", "javascript",
+`const oyuncu = {
+    ad: "Ayşe",
+    can: 100,
+    envanter: ["kılıç", "kalkan"],
+    hasarAl(miktar) {
+        this.can = Math.max(0, this.can - miktar);
+        console.log(this.ad + " canı: " + this.can);
+    },
+};
+oyuncu.hasarAl(30);
+console.log(oyuncu.envanter.length + " eşya");
+`);
+    add("JavaScript", "js-sinif", "Sınıflar (class)", "Aynı türden çok nesne üretmek için şablon.", "javascript",
+`class Dusman {
+    constructor(x, y, hiz = 2) {
+        this.x = x;
+        this.y = y;
+        this.hiz = hiz;
+        this.canli = true;
+    }
+    guncelle() { this.x -= this.hiz; if (this.x < -20) this.canli = false; }
+    ciz(ctx) { ctx.fillStyle = "#df93a3"; ctx.fillRect(this.x, this.y, 20, 20); }
+}
+const dusmanlar = [new Dusman(400, 50), new Dusman(450, 120, 3)];
+`);
+    add("JavaScript", "js-async", "Bekleme ve async/await", "Bir işi bitmesini bekleyerek sırayla yap.", "javascript",
+`const bekle = (ms) => new Promise((tamam) => setTimeout(tamam, ms));
+
+async function geriSayim() {
+    for (let i = 3; i > 0; i--) {
+        console.log(i);
+        await bekle(1000);
+    }
+    console.log("Başla!");
+}
+geriSayim();
+`);
+    add("JavaScript", "js-fetch", "JSON verisi okuma (fetch)", "Projendeki bir .json dosyasını oku. Not: önizleme internete çıkamaz, sadece kendi dosyaların.", "javascript",
+`async function veriOku() {
+    try {
+        const cevap = await fetch("veri.json");
+        if (!cevap.ok) throw new Error("Dosya bulunamadı: " + cevap.status);
+        const veri = await cevap.json();
+        console.log(veri);
+        return veri;
+    } catch (hata) {
+        console.error("Okunamadı:", hata.message);
+    }
+}
+veriOku();
+`);
+    add("JavaScript", "js-metin", "Metin işlemleri", "Büyük/küçük harf, arama, bölme, birleştirme.", "javascript",
+`const yazi = "Merhaba VEMTRIO dünyası";
+console.log(yazi.toLocaleUpperCase("tr"));      // Türkçe büyük harf (i → İ)
+console.log(yazi.includes("VEMTRIO"));          // true
+console.log(yazi.split(" "));                   // ["Merhaba", "VEMTRIO", "dünyası"]
+console.log(yazi.replace("Merhaba", "Selam"));
+console.log(yazi.length + " karakter");
+console.log("5".padStart(3, "0"));              // "005"
+`);
+    add("JavaScript", "js-saat", "Saat ve tarih", "Canlı saat ve bugünün tarihi.", "javascript",
+`function saatiGoster() {
+    const simdi = new Date();
+    const saat = simdi.toLocaleTimeString("tr-TR");
+    const tarih = simdi.toLocaleDateString("tr-TR", { weekday: "long", day: "numeric", month: "long" });
+    document.title = saat;
+    console.log(tarih + " · " + saat);
+}
+setInterval(saatiGoster, 1000);
+`);
+
+    // ---------- Oyun (ek) ----------
+    add("Oyun", "oyun-ziplama", "Yerçekimi ve zıplama", "Boşlukla zıpla, yere düş. Platform oyunlarının temeli.", "javascript",
+`const oyuncu = { x: 50, y: 0, hy: 0, yerde: false };
+const YERCEKIMI = 0.6, ZIPLAMA = -11, ZEMIN = 260;
+document.addEventListener("keydown", (e) => {
+    if (e.code === "Space" && oyuncu.yerde) { oyuncu.hy = ZIPLAMA; oyuncu.yerde = false; }
+});
+function fizik() {
+    oyuncu.hy += YERCEKIMI;          // her karede aşağı hızlan
+    oyuncu.y += oyuncu.hy;
+    if (oyuncu.y >= ZEMIN) { oyuncu.y = ZEMIN; oyuncu.hy = 0; oyuncu.yerde = true; }
+}
+// oyun döngüsünde her karede: fizik(); sonra çiz
+`);
+    add("Oyun", "oyun-dusman", "Düşman üretme (spawn)", "Belirli aralıkla sağdan gelen düşmanlar; ekrandan çıkanlar silinir.", "javascript",
+`const dusmanlar = [];
+let sayac = 0;
+function dusmanGuncelle(canvas) {
+    if (++sayac % 60 === 0) {                     // ~1 saniyede bir (60 kare)
+        dusmanlar.push({ x: canvas.width, y: Math.random() * (canvas.height - 20), hiz: 2 + Math.random() * 3 });
+    }
+    for (const d of dusmanlar) d.x -= d.hiz;
+    for (let i = dusmanlar.length - 1; i >= 0; i--) if (dusmanlar[i].x < -20) dusmanlar.splice(i, 1);
+}
+function dusmanCiz(ctx) {
+    ctx.fillStyle = "#df93a3";
+    for (const d of dusmanlar) ctx.fillRect(d.x, d.y, 20, 20);
+}
+`);
+    add("Oyun", "oyun-durum", "Menü / oyun / bitti ekranları", "Oyun durumunu tek değişkenle yönet: menü, oyun, duraklat, bitti.", "javascript",
+`let durum = "menu";      // "menu" | "oyun" | "duraklat" | "bitti"
+document.addEventListener("keydown", (e) => {
+    if (e.key === "Enter" && (durum === "menu" || durum === "bitti")) baslat();
+    if (e.key === "p" && durum === "oyun") durum = "duraklat";
+    else if (e.key === "p" && durum === "duraklat") durum = "oyun";
+});
+function baslat() { durum = "oyun"; /* skoru, oyuncuyu sıfırla */ }
+function kare(ctx, canvas) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+    ctx.fillStyle = "#fff"; ctx.textAlign = "center"; ctx.font = "20px sans-serif";
+    if (durum === "menu") ctx.fillText("Başlamak için Enter", canvas.width / 2, canvas.height / 2);
+    else if (durum === "duraklat") ctx.fillText("Duraklatıldı (P)", canvas.width / 2, canvas.height / 2);
+    else if (durum === "bitti") ctx.fillText("Oyun bitti! Enter = tekrar", canvas.width / 2, canvas.height / 2);
+    else { /* oyunu güncelle ve çiz */ }
+    requestAnimationFrame(() => kare(ctx, canvas));
+}
+`);
+    add("Oyun", "oyun-resim", "Resim (sprite) çizme", "Bir PNG yükleyip canvas'a çiz. Resim projende olmalı.", "javascript",
+`const resim = new Image();
+resim.src = "oyuncu.png";
+let hazir = false;
+resim.onload = () => { hazir = true; };
+function oyuncuCiz(ctx, x, y) {
+    if (hazir) ctx.drawImage(resim, x, y, 48, 48);
+    else { ctx.fillStyle = "#86b2dc"; ctx.fillRect(x, y, 48, 48); }   // resim yüklenene kadar kare
+}
+`);
+    add("Oyun", "oyun-parcacik", "Parçacık efekti (patlama)", "Bir noktada küçük renkli parçacıklar saçılır ve kaybolur.", "javascript",
+`const parcaciklar = [];
+function patlat(x, y, renk = "#c8a865", adet = 24) {
+    for (let i = 0; i < adet; i++) {
+        const aci = Math.random() * Math.PI * 2, hiz = 1 + Math.random() * 4;
+        parcaciklar.push({ x, y, vx: Math.cos(aci) * hiz, vy: Math.sin(aci) * hiz, omur: 40, renk });
+    }
+}
+function parcacikCiz(ctx) {
+    for (let i = parcaciklar.length - 1; i >= 0; i--) {
+        const p = parcaciklar[i];
+        p.x += p.vx; p.y += p.vy; p.vy += 0.1; p.omur--;
+        if (p.omur <= 0) { parcaciklar.splice(i, 1); continue; }
+        ctx.globalAlpha = p.omur / 40;
+        ctx.fillStyle = p.renk;
+        ctx.fillRect(p.x, p.y, 3, 3);
+    }
+    ctx.globalAlpha = 1;
+}
+`);
+    add("Oyun", "oyun-rekor", "En yüksek skoru sakla", "Rekor tarayıcıda kalır, sayfa yenilense de kaybolmaz.", "javascript",
+`let rekor = 0;
+try { rekor = Number(localStorage.getItem("rekor")) || 0; } catch (e) { }
+function skorBitti(skor) {
+    if (skor > rekor) {
+        rekor = skor;
+        try { localStorage.setItem("rekor", String(rekor)); } catch (e) { }
+        console.log("Yeni rekor: " + rekor);
+    }
+}
+`);
+
     // ---------- Başlangıç projeleri (eski şablonlar) ----------
     for (const tp of VS.TEMPLATES || []) P.push({ cat: "Başlangıç projeleri", id: "proje-" + tp.id, title: tp.name(), desc: tp.desc(), lang: "proje", project: tp.id });
 
     VS.codePool = P;
+    // ---------- Kod Havuzu otomatik tamamlamada: "oyun", "zipla", "modal"... yazınca kalıp önerilir ----------
+    // HTML dosyasında CSS/JS kalıpları <style>/<script> içine sarılarak eklenir.
+    const katla = s => String(s).toLocaleLowerCase("tr").replace(/[çğıöşüâîû]/g, c => ({ ç: "c", ğ: "g", ı: "i", ö: "o", ş: "s", ü: "u", â: "a", î: "i", û: "u" })[c]);
+    function poolCompletions(monaco) {
+        const sar = (p, dil) => dil === "html" && p.lang === "css" ? "<style>\n" + p.code + "</style>\n" : dil === "html" && p.lang === "javascript" ? "<script>\n" + p.code + "</script>\n" : p.code;
+        const uyar = (p, dil) => p.code && (p.lang === dil || dil === "html" || (dil === "typescript" && p.lang === "javascript"));
+        const provider = dil => ({
+            provideCompletionItems(model, pos) {
+                if (VS.settings["pool.suggest"] === false) return { suggestions: [] };
+                const w = model.getWordUntilPosition(pos);
+                if (!w.word || w.word.length < 3) return { suggestions: [] };   // 3 harften önce araya girmesin (Emmet/etiket önerilerini bozmasın)
+                const range = { startLineNumber: pos.lineNumber, endLineNumber: pos.lineNumber, startColumn: w.startColumn, endColumn: w.endColumn };
+                const q = katla(w.word);
+                return {
+                    suggestions: P.filter(p => uyar(p, dil) && katla(p.id + " " + p.title + " " + p.cat).includes(q)).slice(0, 12).map(p => ({
+                        label: { label: "⚡ " + p.title, description: t("Kod Havuzu", "Code Pool") },
+                        kind: monaco.languages.CompletionItemKind.Snippet,
+                        detail: p.cat + " · " + p.desc,
+                        documentation: { value: "```" + (p.lang === "javascript" ? "js" : p.lang) + "\n" + p.code.slice(0, 900) + "\n```" },
+                        filterText: w.word,                       // yazılan kelimeyle eşleşsin (başlıkta geçse yeter)
+                        sortText: "~" + p.id,                     // normal önerilerin altında dursun
+                        insertText: sar(p, dil),                  // düz metin: içindeki $ işaretleri olduğu gibi kalır
+                        range,
+                    })),
+                };
+            },
+        });
+        for (const dil of ["html", "css", "javascript", "typescript"]) monaco.languages.registerCompletionItemProvider(dil, provider(dil));
+    }
+    if (VS.monaco) poolCompletions(VS.monaco); else VS.on("monaco-ready", poolCompletions);
     const CATS = () => [...new Set(P.map(p => p.cat))];
     let q = "", acik = new Set(VS.store.get("poolOpen", ["HTML", "JavaScript", "Oyun"]));
 

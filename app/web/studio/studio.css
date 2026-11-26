@@ -66,6 +66,8 @@ label.f{display:grid;gap:4px;font-size:11px;color:var(--muted)}
 
 /* dosya ağacı */
 .tree{padding:2px 0 20px;user-select:none}
+/* Monaco da öneri kutusunda ".tree" sınıfı kullanır: bizim dosya ağacı kuralı ona sızınca Emmet/öneri listesi 0 px yüksekliğe düşüp görünmez oluyordu */
+.monaco-editor .tree{padding:0;user-select:auto}
 .ti{display:flex;align-items:center;gap:5px;height:22px;padding-right:8px;cursor:pointer;white-space:nowrap;overflow:hidden;color:var(--fg);border:1px solid transparent}
 .ti:hover{background:var(--hover)}
 .ti.sel{background:var(--sel);border-color:var(--accent)}

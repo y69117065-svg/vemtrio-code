@@ -673,7 +673,12 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         previewPath = cand;
         const ui = VS.showAux("preview", t("ÖNİZLEME · ", "PREVIEW · ") + VS.basename(cand), true);
         ui.head.innerHTML = `<button class="ib" data-a="r" title="${t("Yenile", "Reload")}">⟳</button><button class="ib" data-a="w" title="${t("Yeni pencerede aç", "Open in new window")}">⧉</button><button class="ib" data-a="x" title="${t("Kapat", "Close")}">✕</button>`;
-        ui.head.onclick = async e => { const a = e.target.closest("[data-a]"); if (!a) return; if (a.dataset.a === "r") VS.preview(previewPath); if (a.dataset.a === "x") VS.closeAux(); if (a.dataset.a === "w") { const html = await buildBundle(previewPath); if (N) N.win.preview(html, VS.basename(previewPath)); else { const u = URL.createObjectURL(new Blob([html], { type: "text/html" })); window.open(u, "_blank", "noopener"); setTimeout(() => URL.revokeObjectURL(u), 60000); } } };
+        ui.head.onclick = async e => { const a = e.target.closest("[data-a]"); if (!a) return; if (a.dataset.a === "r") VS.preview(previewPath); if (a.dataset.a === "x") VS.closeAux(); if (a.dataset.a === "w") { const html = await buildBundle(previewPath); if (N) N.win.preview(html, VS.basename(previewPath)); else {
+            // Güvenlik: blob: URL siteyle AYNI origin'de çalışır. Kullanıcı/topluluk kodu doğrudan blob'a yazılırsa
+            // localStorage (vcode:aiKey) ve oturumlu /api isteklerine erişir. Bu yüzden blob yalnızca bizim statik
+            // sarmalayıcımızı içerir; proje kodu allow-same-origin OLMAYAN sandbox iframe'de (opak origin) çalışır.
+            const wrap = `<!DOCTYPE html><html><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(VS.basename(previewPath))}</title><style>html,body{margin:0;height:100%;background:#fff}iframe{border:0;width:100%;height:100%;display:block}</style></head><body><iframe sandbox="allow-scripts allow-modals allow-pointer-lock allow-forms"></iframe><script>document.querySelector("iframe").srcdoc=${JSON.stringify(html).replace(/</g, "\\u003c")};<\/script></body></html>`;
+            const u = URL.createObjectURL(new Blob([wrap], { type: "text/html" })); window.open(u, "_blank", "noopener"); setTimeout(() => URL.revokeObjectURL(u), 60000); } } };
         const fr = document.createElement("iframe");
         fr.setAttribute("sandbox", "allow-scripts allow-modals allow-pointer-lock allow-forms");
         fr.title = "preview"; ui.body.appendChild(fr);
@@ -682,6 +687,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
     };
     window.addEventListener("message", e => {
         const m = e.data; if (!m) return;
+        if (m.__vprev && !(e.source && [...document.querySelectorAll("#aux-body iframe")].some(f => f.contentWindow === e.source))) return;
         if (m.__vprev) VS.log(t("Önizleme Konsolu", "Preview Console"), m.text, m.t === "error" ? "e" : m.t === "warn" ? "w" : "");
         if (m.__vemtrio && e.source) e.source.postMessage({ __vemtrioReply: 1, id: m.id, data: m.type === "player" ? { player: { username: "onizleme", display: "Önizleme", color: "#86b2dc" } } : m.type === "board" ? { rows: [] } : { ok: true, best: (m.data || {}).score, rank: 1, total: 1 } }, "*");
     });

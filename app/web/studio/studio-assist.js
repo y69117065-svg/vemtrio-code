@@ -124,6 +124,28 @@
 
     // ---------- temel sorular ----------
     const SSS = [
+        // Kod Havuzu'na eklenen yeni kalıplar (özelden genele: önce bunlara bakılır)
+        [/zipla|yercekimi|platform|gravity|jump/, "Zıplama: her karede dikey hıza yerçekimi ekle (`hy += 0.6`), boşlukta `hy = -11` yap, zemine değince `hy = 0`. Editörde **zipla** yazınca da önerilir.", "oyun-ziplama"],
+        [/dusman|spawn|uret/, "Düşman üretmek için sayaçla her ~60 karede bir diziye yeni düşman ekle, ekrandan çıkanları `splice` ile sil.", "oyun-dusman"],
+        [/parcacik|patlama|efekt|particle/, "Patlama efekti: bir noktadan rastgele yönlere giden, ömrü azaldıkça soluklaşan küçük kareler.", "oyun-parcacik"],
+        [/menu ekrani|duraklat|pause|oyun bitti ekrani|game over/, "Oyun ekranlarını tek değişkenle yönet: `durum = \"menu\" | \"oyun\" | \"duraklat\" | \"bitti\"` ve çizimde duruma göre farklı şey göster.", "oyun-durum"],
+        [/sprite|png ciz|resim ciz|drawimage/, "Canvas'a resim: `const r = new Image(); r.src = \"oyuncu.png\";` yüklenince `ctx.drawImage(r, x, y, 48, 48)`.", "oyun-resim"],
+        [/rekor|en yuksek skor|high ?score/, "Rekoru tarayıcıda sakla: `localStorage.setItem(\"rekor\", skor)`, açılışta `Number(localStorage.getItem(\"rekor\")) || 0`.", "oyun-rekor"],
+        [/modal|acilir pencere|popup/, "Açılır pencere: tam ekran yarı saydam kapsayıcı + ortada kutu; `hidden` özelliğiyle aç/kapat, Esc ile kapat.", "html-modal"],
+        [/navbar|ust menu|menu cubugu/, "Üst menü: `display:flex; justify-content:space-between;` ile logo solda, bağlantılar sağda.", "html-menu"],
+        [/html tablo|tablo (yap|olustur|nasil|ekle)|\btable\b/, "Tablo: `<table>` içinde `<thead>` başlık satırı, `<tbody>` veri satırları; `border-collapse: collapse` ile çizgiler birleşir.", "html-tablo"],
+        [/video|audio|ses oynatici/, "Video: `<video src=\"video.mp4\" controls>` · ses: `<audio src=\"muzik.mp3\" controls>`.", "html-video"],
+        [/flex|flexbox/, "Flexbox: `display:flex; gap:12px; align-items:center; justify-content:space-between;`", "css-flex"],
+        [/karanlik|\btema\b|dark mode|aydinlik/, "Tema için CSS değişkenleri kullan (`--arka`, `--yazi`) ve `document.body.classList.toggle(\"acik\")` ile değiştir.", "css-karanlik"],
+        [/gradyan|gradient|renk gecis/, "Renk geçişli yazı: `background: linear-gradient(...); background-clip: text; color: transparent;`", "css-gradyan-yazi"],
+        [/hover|uzerine gel/, "Üzerine gelince: `transition: transform .2s;` ve `:hover { transform: scale(1.03); }`", "css-hover"],
+        [/class|sinif/, "Sınıf: `class Dusman { constructor(x, y) { this.x = x; } guncelle() { ... } }` · yeni nesne: `new Dusman(10, 20)`.", "js-sinif"],
+        [/nesne|object/, "Nesne: `const oyuncu = { ad: \"Ayşe\", can: 100 };` · erişim: `oyuncu.can`.", "js-nesne"],
+        [/async|await|promise|sirayla bekle/, "Beklemek için: `const bekle = ms => new Promise(r => setTimeout(r, ms));` sonra `async` fonksiyonda `await bekle(1000);`", "js-async"],
+        [/fetch|json oku|veri oku|api istek/, "Kendi .json dosyanı oku: `const veri = await (await fetch(\"veri.json\")).json();` (önizleme internete çıkamaz).", "js-fetch"],
+        [/metin|string|harf|buyuk harf/, "Metin: `yazi.toLocaleUpperCase(\"tr\")`, `yazi.includes(\"x\")`, `yazi.split(\" \")`, `yazi.replace(a, b)`.", "js-metin"],
+        [/saat|tarih|date|zaman goster/, "Tarih/saat: `new Date().toLocaleTimeString(\"tr-TR\")`.", "js-saat"],
+        [/eleman ekle|createelement|ogeyi ekle|\bdom\b/, "Sayfaya öğe: `const d = document.createElement(\"div\"); d.textContent = \"...\"; document.body.appendChild(d);`", "js-dom-olustur"],
         [/emmet|! (ile|yaz)|iskelet|sablon|boilerplate|html nasil baslar/, "HTML iskeleti için boş bir .html dosyasında **!** yaz ve **Enter** ya da **Tab**'a bas. Kısaltmalar da çalışır: `ul>li*3`, `div.kart`, `button#btn` yazıp Tab'a bas.", "html-iskelet"],
         [/buton|button|tikla/, "Buton: `<button id=\"btn\">Tıkla</button>`. Tıklanınca bir şey olsun diye: `document.getElementById(\"btn\").addEventListener(\"click\", () => { ... });`", "html-buton"],
         [/ortala|ortaya|center/, "Bir şeyi ortalamanın en kolay yolu flexbox: kapsayıcıya `display:flex; align-items:center; justify-content:center;` ver.", "css-ortala"],

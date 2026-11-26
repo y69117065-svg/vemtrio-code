@@ -119,7 +119,7 @@
         const box = $("#ai-chat"); if (!box) return;
         box.innerHTML = view.length ? view.map(m => `<div class="msg ${m.k}">${m.k === "a" ? fmt(m.text) : esc(m.text)}</div>`).join("") : useClaude()
             ? `<div class="hint" style="padding:8px;line-height:1.6">${t("Claude modu: kod yazdırabilir, dosyalarını düzenletebilir, bağlı MCP araçlarını kullandırabilirsin.", "Claude mode: write code, edit files, use connected MCP tools.")}<br><br>${t("Araçlar", "Tools")}: ${toolList().tools.length}</div>`
-            : `<div class="hint" style="padding:8px;line-height:1.7"><b style="color:var(--fg)">VEMTRIO Topluluk AI</b><br>${t("Topluluktaki projelerin nasıl çalıştığını anlatırım, oradan örnek kod gösteririm, kodundaki hataları açıklarım ve VEMTRIO Code'un kullanımını bilirim. Hazır sorular:", "I explain how community projects work, show example code from them, explain errors in your code and know how VEMTRIO Code works. Quick questions:")}<br><br>${(VS.assistChips ? VS.assistChips() : ["koddaki hata ne?"]).map(x => `<button class="btn sec" style="height:24px;font-size:11px;margin:2px" data-ask="${esc(x)}">${esc(x)}</button>`).join("")}</div>`;
+            : `<div class="hint" style="padding:8px;line-height:1.7"><b style="color:var(--fg)">${VS.native ? "VEMTRIO Kod AI" : "VEMTRIO Topluluk AI"}</b><br>${VS.native ? t("Kodundaki hataları açıklarım, Kod Havuzu'ndan örnek gösteririm ve VEMTRIO Code'un kullanımını bilirim. Hazır sorular:", "I explain errors in your code, show examples from the Code Pool and know how VEMTRIO Code works. Quick questions:") : t("Topluluktaki projelerin nasıl çalıştığını anlatırım, oradan örnek kod gösteririm, kodundaki hataları açıklarım ve VEMTRIO Code'un kullanımını bilirim. Hazır sorular:", "I explain how community projects work, show example code from them, explain errors in your code and know how VEMTRIO Code works. Quick questions:")}<br><br>${(VS.assistChips ? VS.assistChips() : ["koddaki hata ne?"]).map(x => `<button class="btn sec" style="height:24px;font-size:11px;margin:2px" data-ask="${esc(x)}">${esc(x)}</button>`).join("")}</div>`;
         box.scrollTop = box.scrollHeight;
         const b = $("#ai-send"); if (b) { b.textContent = busy ? "■ " + t("Durdur", "Stop") : t("Gönder", "Send") + " ↵"; }
     }
@@ -143,7 +143,7 @@
             const pl = e.target.closest("[data-pool]"); if (pl) { const p = (VS.codePool || []).find(x => x.id === pl.dataset.pool); if (p) { VS.run("pool.show"); setTimeout(() => { const b = document.querySelector(`[data-ekle="${p.id}"]`); if (b) b.click(); else VS.toast(p.title, ""); }, 50); } }
         };
         draw(); setTimeout(() => ta.focus(), 30);
-        if (VS.loadCommunityIndex) VS.loadCommunityIndex().then(() => { if (!view.length) draw(); });
+        if (VS.loadCommunityIndex && !VS.native) VS.loadCommunityIndex().then(() => { if (!view.length) draw(); });
     }
     VS.assistAsk = (q, line) => { if (mode === "claude" && !key()) mode = "assist"; openAI(true); setTimeout(() => send(String(q) + (line ? ` (${t("satır", "line")} ${line})` : "")), 30); };
     VS.viewDefs = VS.viewDefs || [];
