@@ -222,7 +222,7 @@
     }
     function renderTabs() {
         const el = $("#tabs");
-        el.innerHTML = VS.tabs.map((x, i) => { const ic = x.kind === "file" ? VS.icon(x.path) : [x.icon || "◆", "var(--accent)"]; return `<div class="tab ${x === active ? "on" : ""} ${x.dirty ? "dirty" : ""} ${x.preview ? "preview" : ""}" data-i="${i}" draggable="true" title="${esc(x.path)}"><span style="color:${ic[1]};font:700 9px var(--mono)">${esc(ic[0])}</span><span class="nm">${esc(x.title)}</span><button class="x" data-close="${i}" aria-label="close"><span>✕</span></button></div>`; }).join("");
+        el.innerHTML = VS.tabs.map((x, i) => { const ic = x.kind === "file" && !isUser(x.path) ? VS.fileIcon(x.path) : `<span class="fic" style="color:var(--accent)">${x.kind === "file" ? VS.ci("settings-gear") : esc(x.icon || "◆")}</span>`; return `<div class="tab ${x === active ? "on" : ""} ${x.dirty ? "dirty" : ""} ${x.preview ? "preview" : ""}" data-i="${i}" draggable="true" title="${esc(x.path)}">${ic}<span class="nm">${esc(x.title)}</span><button class="x" data-close="${i}" aria-label="close"><span>${VS.ci("close")}</span></button></div>`; }).join("");
         const on = el.querySelector(".tab.on"); if (on) on.scrollIntoView({ block: "nearest", inline: "nearest" });
     }
     function renderCrumbs() {
@@ -244,19 +244,25 @@
         };
         const depthPad = p => (p.split("/").length - 1) * 10 + 8;
         const out = [];
-        const walk = dir => {
+        // pad: bu seviyenin girintisi (birleştirilen klasörler yüzünden yol derinliğinden değil, görünen seviyeden hesaplanır)
+        // VS Code gibi girinti çizgileri: açık her klasörün içindekilerin solunda, klasör okunun hizasında ince dikey çizgi
+        const guides = gs => gs.map(x => `<i class="ig" style="left:${x}px"></i>`).join("");
+        const walk = (dir, pad, gs) => {
             const { dirs, files } = kids(dir);
-            for (const d of dirs) {
+            for (const d0 of dirs) {
+                // VS Code "compact folders": içinde tek klasör olan klasörler tek satırda (a\b) gösterilir
+                let d = d0, label = VS.basename(d0);
+                for (let k = kids(d); k.dirs.length === 1 && !k.files.length; k = kids(d)) { d = k.dirs[0]; label += "\\" + VS.basename(d); }
                 const open = ws.expanded.has(d);
-                out.push(`<div class="ti ${treeSel === d ? "sel" : ""}" data-p="${esc(d)}" data-d="1" draggable="true" style="padding-left:${depthPad(d)}px"><span class="tw">${open ? "▾" : "▸"}</span><span class="nm">${esc(VS.basename(d))}</span></div>`);
-                if (open) walk(d);
+                out.push(`<div class="ti ${treeSel === d ? "sel" : ""}" data-p="${esc(d)}" data-d="1" draggable="true" style="padding-left:${pad}px">${guides(gs)}<span class="tw">${VS.ci(open ? "chevron-down" : "chevron-right")}</span><span class="nm">${esc(label)}</span></div>`);
+                if (open) walk(d, pad + 10, [...gs, pad + 8]);
             }
             for (const f of files) {
-                const ic = VS.icon(f), tab = tabByPath(f);
-                out.push(`<div class="ti ${treeSel === f ? "sel" : ""}" data-p="${esc(f)}" draggable="true" style="padding-left:${depthPad(f)}px"><span class="tw"></span><span class="ic" style="color:${ic[1]}">${esc(ic[0])}</span><span class="nm">${esc(VS.basename(f))}</span>${tab && tab.dirty ? `<span class="dirty"></span>` : ""}</div>`);
+                const tab = tabByPath(f);
+                out.push(`<div class="ti ${treeSel === f ? "sel" : ""}" data-p="${esc(f)}" draggable="true" style="padding-left:${pad}px">${guides(gs)}<span class="tw"></span>${VS.fileIcon(f)}<span class="nm">${esc(VS.basename(f))}</span>${tab && tab.dirty ? `<span class="dirty"></span>` : ""}</div>`);
             }
         };
-        walk("");
+        walk("", 8, []);
         return out.join("");
     }
     function selectInTree(p) { if (!VS.ws || !p || isUser(p)) return; treeSel = p; const parts = p.split("/"); for (let i = 1; i < parts.length; i++) VS.ws.expanded.add(parts.slice(0, i).join("/")); renderExplorer(); }
@@ -298,7 +304,7 @@
         await refreshTree(); VS.toast(n + t(" dosya eklendi.", " files added."), "ok");
     }
     function explorerView(body, actions) {
-        actions.innerHTML = VS.ws ? `<button title="${t("Yeni Dosya", "New File")}" data-a="nf">＋</button><button title="${t("Yeni Klasör", "New Folder")}" data-a="nd">▣</button><button title="${t("Yenile", "Refresh")}" data-a="rf">⟳</button><button title="${t("Hepsini Daralt", "Collapse All")}" data-a="ca">⊟</button>` : "";
+        actions.innerHTML = VS.ws ? `<button title="${t("Yeni Dosya", "New File")}" data-a="nf">${VS.ci("new-file")}</button><button title="${t("Yeni Klasör", "New Folder")}" data-a="nd">${VS.ci("new-folder")}</button><button title="${t("Yenile", "Refresh")}" data-a="rf">${VS.ci("refresh")}</button><button title="${t("Hepsini Daralt", "Collapse All")}" data-a="ca">${VS.ci("collapse-all")}</button>` : "";
         actions.onclick = e => { const a = e.target.closest("[data-a]"); if (!a) return; ({ nf: () => VS.newFile(), nd: () => VS.newFolder(), rf: refreshTree, ca: () => { VS.ws.expanded.clear(); saveExp(); renderExplorer(); } })[a.dataset.a](); };
         if (!VS.ws) {
             body.innerHTML = `<div class="pad col"><p class="hint">${t("Henüz açık klasör yok.", "You have not yet opened a folder.")}</p>
@@ -459,7 +465,7 @@
     function renderPanel() {
         const counts = problemsCount();
         $("#panel-tabs").innerHTML = panelTabs.map(([id, lbl]) => `<button class="pt ${id === curPanel ? "on" : ""}" data-p="${id}">${lbl()}${id === "problems" && counts.e + counts.w ? ` <span style="background:var(--badge);color:var(--accent-fg);border-radius:8px;padding:0 5px;font-size:10px">${counts.e + counts.w}</span>` : ""}</button>`).join("")
-            + `<div class="grow"></div>${curPanel === "output" ? `<select id="out-ch" style="width:auto;height:22px;padding:0 4px;font-size:11px">${Object.keys(outputs).map(k => `<option ${k === curOut ? "selected" : ""}>${esc(k)}</option>`).join("")}</select><button class="ib" data-pa="clear" title="Clear">⊘</button>` : ""}${curPanel === "terminal" ? `<span class="hint" style="font-size:11px;margin-right:6px">${esc(VS.term.label())}</span><button class="ib" data-pa="tclear" title="${t("Temizle", "Clear")}">⊘</button><button class="ib" data-pa="kill" title="${t("Durdur (Ctrl+C)", "Stop (Ctrl+C)")}">■</button>` : ""}<button class="ib" data-pa="max" title="${t("Büyüt", "Maximize")}">${$("#wb").classList.contains("panel-max") ? "⌄" : "⌃"}</button><button class="ib" data-pa="close" title="${t("Kapat", "Close")}">✕</button>`;
+            + `<div class="grow"></div>${curPanel === "output" ? `<select id="out-ch" style="width:auto;height:22px;padding:0 4px;font-size:11px">${Object.keys(outputs).map(k => `<option ${k === curOut ? "selected" : ""}>${esc(k)}</option>`).join("")}</select><button class="ib" data-pa="clear" title="Clear">${VS.ci("clear-all")}</button>` : ""}${curPanel === "terminal" ? `<span class="hint" style="font-size:11px;margin-right:6px">${esc(VS.term.label())}</span><button class="ib" data-pa="tclear" title="${t("Temizle", "Clear")}">${VS.ci("clear-all")}</button><button class="ib" data-pa="kill" title="${t("Durdur (Ctrl+C)", "Stop (Ctrl+C)")}">${VS.ci("debug-stop")}</button>` : ""}<button class="ib" data-pa="max" title="${t("Büyüt", "Maximize")}">${VS.ci($("#wb").classList.contains("panel-max") ? "chevron-down" : "chevron-up")}</button><button class="ib" data-pa="close" title="${t("Kapat", "Close")}">${VS.ci("close")}</button>`;
         const body = $("#panel-body");
         if (curPanel === "terminal") { VS.term.mount(body); }
         else { VS.term.unmount(); }
@@ -707,7 +713,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         if (!cand) return VS.toast(t("Önizlenecek HTML dosyası yok. Yeni bir index.html oluşturup ! yazıp Tab'a bas.", "No HTML file to preview. Create index.html, type ! and press Tab."), "warn");
         previewPath = cand;
         const ui = VS.showAux("preview", t("ÖNİZLEME · ", "PREVIEW · ") + VS.basename(cand), true);
-        ui.head.innerHTML = `<button class="ib" data-a="r" title="${t("Yenile", "Reload")}">⟳</button><button class="ib" data-a="w" title="${t("Yeni pencerede aç", "Open in new window")}">⧉</button><button class="ib" data-a="x" title="${t("Kapat", "Close")}">✕</button>`;
+        ui.head.innerHTML = `<button class="ib" data-a="r" title="${t("Yenile", "Reload")}">${VS.ci("refresh")}</button><button class="ib" data-a="w" title="${t("Yeni pencerede aç", "Open in new window")}">${VS.ci("link-external")}</button><button class="ib" data-a="x" title="${t("Kapat", "Close")}">${VS.ci("close")}</button>`;
         ui.head.onclick = async e => { const a = e.target.closest("[data-a]"); if (!a) return; if (a.dataset.a === "r") VS.preview(previewPath); if (a.dataset.a === "x") VS.closeAux(); if (a.dataset.a === "w") { const html = await buildBundle(previewPath); if (N) N.win.preview(html, VS.basename(previewPath)); else {
             // Güvenlik: blob: URL siteyle AYNI origin'de çalışır. Kullanıcı/topluluk kodu doğrudan blob'a yazılırsa
             // localStorage (vcode:aiKey) ve oturumlu /api isteklerine erişir. Bu yüzden blob yalnızca bizim statik
@@ -747,7 +753,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
             ${model ? `<span class="it" data-s="indent">${model.getOptions().insertSpaces ? t("Boşluk", "Spaces") : "Tab"}: ${model.getOptions().tabSize}</span><span class="it">UTF-8</span><span class="it" data-s="eol">${model.getEOL() === "\n" ? "LF" : "CRLF"}</span><span class="it" data-s="lang">{ } ${esc(model.getLanguageId())}</span>` : ""}
             ${VS.liveServerOn && VS.liveServerOn() ? `<span class="it" data-s="golive" title="${t("Canlı önizlemeyi aç/kapat (Live Server)", "Toggle live preview (Live Server)")}">◉ Go Live</span>` : ""}
             <span class="it" data-s="theme" title="${t("Renk Teması", "Color Theme")}">◐</span>
-            <span class="it" data-s="ai" title="AI">✦ AI</span>
+            <span class="it" data-s="ai" title="AI">${VS.ci("sparkle")} AI</span>
             <span class="it" data-s="bell" title="${t("Bildirimler", "Notifications")}">${t("Çıktı", "Output")}</span>`;
     }
     VS.renderStatus = renderStatus;
@@ -882,7 +888,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
     VS.apiHub = apiHub;
     let me = undefined;
     VS.communityView = async (body, actions) => {
-        actions.innerHTML = `<button title="${t("Yenile", "Refresh")}" data-a="r">⟳</button>`;
+        actions.innerHTML = `<button title="${t("Yenile", "Refresh")}" data-a="r">${VS.ci("refresh")}</button>`;
         actions.onclick = () => { me = undefined; VS.communityView(body, actions); };
         body.innerHTML = `<div class="pad hint">…</div>`;
         if (me === undefined) { const j = await apiHub("me"); me = j.ok ? j.user : null; }
@@ -1097,7 +1103,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         viewCommands(); renderMenubar(); renderActivity();
         VS.applyTheme(VS.settings["workbench.colorTheme"]);
         $("#tb-search").onclick = () => VS.palette("");
-        $("#tb-right").innerHTML = `<button data-c="workbench.action.toggleSidebarVisibility" title="${t("Yan çubuk", "Side bar")} (Ctrl+B)">◧</button><button data-c="workbench.action.togglePanel" title="Panel (Ctrl+J)">⬓</button><button data-c="vemtrio.run" title="${t("Çalıştır", "Run")} (F5)" style="color:var(--ok)"><svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor" style="margin:auto"><path d="M7 4.5v15l12-7.5z"/></svg></button><button data-c="preview.toggle" title="${t("Önizleme", "Preview")} (Ctrl+Shift+V)"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" style="margin:auto"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M12 4v16"/></svg></button><button data-c="ai.toggle" title="AI (Ctrl+Alt+I)">✦</button>`;
+        $("#tb-right").innerHTML = `<button data-c="workbench.action.toggleSidebarVisibility" title="${t("Yan çubuk", "Side bar")} (Ctrl+B)">${VS.ci("layout-sidebar-left")}</button><button data-c="workbench.action.togglePanel" title="Panel (Ctrl+J)">${VS.ci("layout-panel")}</button><button data-c="vemtrio.run" title="${t("Çalıştır", "Run")} (F5)" style="color:var(--ok)">${VS.ci("play")}</button><button data-c="preview.toggle" title="${t("Önizleme", "Preview")} (Ctrl+Shift+V)">${VS.ci("open-preview")}</button><button data-c="ai.toggle" title="AI (Ctrl+Alt+I)">${VS.ci("sparkle")}</button>`;
         $("#tb-right").onclick = e => { const b = e.target.closest("[data-c]"); if (b) VS.run(b.dataset.c); };
         $("#activity").onclick = async e => {
             const b = e.target.closest("[data-v]"); if (b) return showView(b.dataset.v, true);
@@ -1138,7 +1144,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         try { monaco = await loadMonaco(); }
         catch (e) { VS.toast(t("Editör yüklenemedi. İnternet bağlantını kontrol et.", "Editor failed to load. Check your connection."), "err", 0); return; }
         VS.monaco = monaco;
-        editor = monaco.editor.create($("#monaco"), { automaticLayout: true, model: null, ...editorOptions(), padding: { top: 6 }, fixedOverflowWidgets: true, quickSuggestions: { other: true, comments: false, strings: true }, suggest: { preview: true }, inlineSuggest: { enabled: true } });
+        editor = monaco.editor.create($("#monaco"), { automaticLayout: true, model: null, ...editorOptions(), padding: { top: 6 }, fixedOverflowWidgets: true, quickSuggestions: { other: true, comments: false, strings: true }, suggest: { preview: false }, inlineSuggest: { enabled: true } });   // öneri önizlemesi kapalı (VS Code varsayılanı): yazarken satır içinde kutulu "<sAmp></sAmp>" gibi hayalet metin çıkmasın
         VS.editor = editor;
         VS.focusEditor = () => editor.focus();
         editor.onDidChangeCursorPosition(VS.debounce(renderStatus, 60));

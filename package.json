@@ -1,7 +1,7 @@
 {
   "name": "vemtrio-code",
   "productName": "VEMTRIO Code",
-  "version": "1.2.1",
+  "version": "1.2.2",
   "description": "VEMTRIO Code — VS Code tarzı kod editörü (Open VSX eklentileri, MCP, Emmet, terminal, canlı önizleme)",
   "author": "VEMTRIO",
   "license": "UNLICENSED",

@@ -277,3 +277,19 @@ label.f{display:grid;gap:4px;font-size:11px;color:var(--muted)}
 .w-foot{margin-top:40px;color:var(--muted);font-size:12px}
 .w-foot a{color:var(--muted)}
 @media (max-width:640px){.w-acts{grid-template-columns:1fr 1fr}}
+
+/* VS Code simgeleri (Codicons) ve dosya simgeleri */
+.codicon{font-size:16px;line-height:1;vertical-align:middle}
+.fic{width:16px;height:16px;flex:none;display:inline-grid;place-items:center;margin-right:6px}
+.fic .codicon{font-size:15px}
+.fic-t{font:700 8.5px/1 var(--mono);letter-spacing:-.3px}
+.ti .tw{width:16px;flex:none;display:inline-grid;place-items:center;color:var(--muted)}
+.ti .tw .codicon{font-size:14px}
+.tab .fic{margin-right:6px}
+.tab .x .codicon{font-size:14px}
+#tb-right button .codicon{font-size:16px}
+.sb-actions button .codicon,.ib .codicon{font-size:15px}
+/* gezgin girinti çizgileri (VS Code "tree indent guides") */
+.ti{position:relative}
+.ti .ig{position:absolute;top:0;bottom:0;width:1px;background:currentColor;opacity:.16;pointer-events:none}
+#sidebar:hover .ti .ig{opacity:.3}

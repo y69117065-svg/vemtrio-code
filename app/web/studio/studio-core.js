@@ -47,6 +47,20 @@
     VS.langOf = p => { const b = VS.basename(p).toLowerCase(); if (b === "dockerfile") return "dockerfile"; return (VS.extraLangs && VS.extraLangs[VS.ext(p)]) || LANGS[VS.ext(p)] || "plaintext"; };
     const ICONS = { javascript: ["JS", "#e8d44d"], typescript: ["TS", "#3d8fd1"], html: ["<>", "#e4714a"], css: ["#", "#5aa0e8"], scss: ["#", "#d26a9d"], json: ["{}", "#cbcb41"], markdown: ["M↓", "#5aa0e8"], python: ["PY", "#4e9fd6"], lua: ["LU", "#6a7fd1"], csharp: ["C#", "#a07ad6"], cpp: ["C+", "#6a9fd6"], c: ["C", "#6a9fd6"], java: ["JV", "#e26a3c"], go: ["GO", "#5ec2d6"], rust: ["RS", "#de8a5a"], shell: ["$", "#8fe3a0"], powershell: ["PS", "#5aa0e8"], xml: ["<>", "#e4714a"], yaml: ["YM", "#c88"], plaintext: ["≡", "#858b94"] };
     VS.icon = p => { const e = VS.ext(p); if (/^(png|jpe?g|gif|webp|ico|bmp)$/.test(e)) return ["▣", "#a596e0"]; return ICONS[VS.langOf(p)] || ["≡", "#858b94"]; };
+    // VS Code'un simge seti (Codicons, Monaco ile birlikte gelir; internetsiz de çalışır)
+    VS.ci = (name, style = "") => `<i class="codicon codicon-${name}"${style ? ` style="${style}"` : ""} aria-hidden="true"></i>`;
+    // Dosya simgeleri: VS Code'un varsayılan (Seti) temasına benzer renk ve şekiller
+    const FI = { html: ["code", "#e37933"], xml: ["code", "#e37933"], json: ["json", "#cbcb41"], markdown: ["markdown", "#519aba"], css: ["#", "#519aba", 1], scss: ["#", "#f55385", 1], javascript: ["JS", "#cbcb41", 1], typescript: ["TS", "#519aba", 1], python: ["py", "#519aba", 1], lua: ["lua", "#519aba", 1], csharp: ["C#", "#a074c4", 1], cpp: ["C++", "#519aba", 1], c: ["C", "#519aba", 1], java: ["J", "#cc3e44", 1], go: ["go", "#519aba", 1], rust: ["rs", "#e37933", 1], shell: ["terminal", "#4d5a5e"], powershell: ["terminal-powershell", "#519aba"], yaml: ["settings", "#a074c4"], plaintext: ["list-flat", "#6d8086"] };
+    VS.fileIcon = p => {
+        const e = VS.ext(p);
+        if (/^(png|jpe?g|gif|webp|ico|bmp|svg)$/.test(e)) return `<span class="fic" style="color:#a074c4">${VS.ci("file-media")}</span>`;
+        if (/^(mp3|wav|ogg|m4a)$/.test(e)) return `<span class="fic" style="color:#a074c4">${VS.ci("file-media")}</span>`;
+        if (/^(zip|rar|7z)$/.test(e)) return `<span class="fic" style="color:#cbcb41">${VS.ci("file-zip")}</span>`;
+        if (/^(license|licence)$/i.test(VS.basename(p))) return `<span class="fic" style="color:#cbcb41">${VS.ci("law")}</span>`;
+        const f = FI[VS.langOf(p)];
+        if (!f) return `<span class="fic" style="color:#6d8086">${VS.ci("file")}</span>`;
+        return f[2] ? `<span class="fic fic-t" style="color:${f[1]}">${f[0]}</span>` : `<span class="fic" style="color:${f[1]}">${VS.ci(f[0])}</span>`;
+    };
     VS.isBinaryName = p => /\.(png|jpe?g|gif|webp|ico|bmp|mp3|wav|ogg|mp4|webm|zip|exe|dll|bin|woff2?|ttf|otf|pdf|vsix)$/i.test(p);
 
     // ---------- dosya sistemleri ----------
