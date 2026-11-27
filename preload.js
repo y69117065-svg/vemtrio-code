@@ -14,6 +14,7 @@ contextBridge.exposeInMainWorld("vnative", {
         reveal: (root, p) => ipcRenderer.invoke("fs:reveal", root, p),
         saveAs: (name, bytes) => ipcRenderer.invoke("fs:saveAs", name, bytes),
         fileUrl: (root, p) => ipcRenderer.sendSync("fs:fileUrl", root, p),
+        dataUrl: (root, p) => ipcRenderer.invoke("fs:dataUrl", root, p),
     },
     term: { run: (o) => ipcRenderer.invoke("term:run", o), kill: (id) => ipcRenderer.invoke("term:kill", id), onData: on("term:data"), onExit: on("term:exit") },
     mcp: { start: (cfg) => ipcRenderer.invoke("mcp:start", cfg), send: (id, m) => ipcRenderer.invoke("mcp:send", id, m), stop: (id) => ipcRenderer.invoke("mcp:stop", id), onMessage: on("mcp:msg"), onLog: on("mcp:log"), onExit: on("mcp:exit") },

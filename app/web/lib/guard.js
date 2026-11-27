@@ -15,7 +15,7 @@
     }
 })(typeof self !== "undefined" ? self : this, function (data) {
     let RULES = [], NET = /$^/, COOKIE = /$^/, KEY_NET = /$^/, W = { crit: 60, high: 30, med: 12, low: 4 }, version = "0";
-    const ALLOWED_EXT = [], LIMITS = { files: 30, fileBytes: 100 * 1024, totalBytes: 300 * 1024 };
+    const ALLOWED_EXT = [], LIMITS = { files: 30, fileBytes: 200 * 1024, totalBytes: 300 * 1024 };
     const rx = (o) => new RegExp(o.src, o.flags);
     function load(d) {
         RULES = d.RULES.map(r => [r.id, r.sev, rx(r.re), r.tr, r.en]);

@@ -141,7 +141,17 @@
         if (!monaco) { VS.once("monaco-ready", () => VS.openFile(path, opts)); return; }
         let tab = tabByPath(path);
         if (!tab) {
-            if (!isUser(path) && VS.isBinaryName(path)) { if (/\.(png|jpe?g|gif|webp|svg|ico|bmp)$/i.test(path) && N) return VS.openCustom("img:" + path, VS.basename(path), el => { el.innerHTML = `<div style="display:grid;place-items:center;height:100%"><img style="max-width:90%;max-height:90%" src="${esc(N.fs.fileUrl(VS.ws.fs.root, path))}"></div>`; }); VS.toast(t("İkili dosyalar düzenlenemez.", "Binary files can't be edited."), "warn"); return; }
+            if (!isUser(path) && VS.isBinaryName(path)) {
+                // Resim: içerik data: adresi olarak okunur (masaüstünde file:// adresleri sayfada engellendiği için resim boş çıkıyordu)
+                if (/\.(png|jpe?g|gif|webp|svg|ico|bmp)$/i.test(path) && VS.ws.fs.dataUrl) return VS.openCustom("img:" + path, VS.basename(path), async el => {
+                    el.innerHTML = `<div style="display:grid;place-items:center;height:100%;color:var(--muted)">…</div>`;
+                    let src = null; try { src = await VS.ws.fs.dataUrl(path); } catch (e) { }
+                    if (!src && N && N.fs.fileUrl) src = N.fs.fileUrl(VS.ws.fs.root, path);
+                    el.innerHTML = src ? `<div style="display:grid;place-items:center;height:100%;background:repeating-conic-gradient(#ffffff08 0 25%,transparent 0 50%) 0 0/16px 16px"><img style="max-width:90%;max-height:90%;image-rendering:auto" src="${esc(src)}" alt=""></div>`
+                        : `<div style="display:grid;place-items:center;height:100%;color:var(--muted)">${t("Bu resim bu çalışma alanında görüntülenemiyor.", "This image can't be shown in this workspace.")}</div>`;
+                });
+                VS.toast(t("İkili dosyalar düzenlenemez.", "Binary files can't be edited."), "warn"); return;
+            }
             let text;
             try { text = isUser(path) ? (path === "user:mcp.json" ? VS.mcpText() : VS.userText[path.slice(5)]) : await VS.ws.fs.read(path); }
             catch (e) { VS.toast(t("Açılamadı: ", "Could not open: ") + e.message, "err"); return; }
@@ -664,7 +674,32 @@ setTimeout(async function(){try{await (async function(){${code.replace(/<\/scrip
         const SHIM = `<script>(function(){function mk(){var s={};return{getItem:function(k){return k in s?s[k]:null},setItem:function(k,v){s[k]=String(v)},removeItem:function(k){delete s[k]},clear:function(){s={}},key:function(i){return Object.keys(s)[i]||null},get length(){return Object.keys(s).length}}}["localStorage","sessionStorage"].forEach(function(n){try{window[n].setItem("__v","1")}catch(e){Object.defineProperty(window,n,{value:mk()})}});
 ["log","info","warn","error"].forEach(function(k){var o=console[k];console[k]=function(){try{parent.postMessage({__vprev:1,t:k,text:[].map.call(arguments,function(x){try{return typeof x==="string"?x:JSON.stringify(x)}catch(e){return String(x)}}).join(" ")},"*")}catch(e){}o.apply(console,arguments)}});
 window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"error",text:e.message+" ("+(e.lineno||"?")+":"+(e.colno||"?")+")"},"*")});})();</script>`;
+        html = await inlineAssets(html, dir);
         return html.match(/^\s*<!doctype[^>]*>/i) ? html.replace(/^(\s*<!doctype[^>]*>)/i, "$1" + SHIM) : SHIM + html;
+    }
+    // Önizlemede resim / ses dosyaları: projedeki dosyalar data: adresine çevrilip HTML, CSS ve JS içindeki
+    // göreli yolların yerine yazılır (önizleme kum havuzunda çalıştığı için dosyalara başka türlü ulaşamaz).
+    const ASSET = /\.(png|jpe?g|gif|webp|svg|ico|bmp|mp3|wav|ogg|m4a)$/i;
+    const relPath = (fromDir, to) => {
+        const a = fromDir ? fromDir.split("/").filter(Boolean) : [], b = to.split("/");
+        let i = 0; while (i < a.length && i < b.length - 1 && a[i] === b[i]) i++;
+        return "../".repeat(a.length - i) + b.slice(i).join("/");
+    };
+    const reEsc = x => x.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+    async function inlineAssets(html, dir) {
+        if (!VS.ws.fs.dataUrl) return html;
+        const assets = VS.ws.files.filter(f => ASSET.test(f));
+        let budget = 30e6;
+        for (const f of assets) {
+            const rel = relPath(dir, f), names = [rel, "./" + rel, ...(dir ? [] : ["/" + f])];
+            const hit = names.some(n => html.includes(n));
+            if (!hit) continue;
+            let url = null; try { url = await VS.ws.fs.dataUrl(f); } catch (e) { }
+            if (!url || (budget -= url.length) < 0) continue;
+            // sadece tırnak ya da url( ) içindeki tam yol değiştirilir: "x.png", 'x.png', `x.png`, url(x.png)
+            for (const n of names) html = html.replace(new RegExp("([\"'`(])\\s*" + reEsc(n) + "\\s*([\"'`)])", "g"), (m, a, b) => a + url + b);
+        }
+        return html;
     }
     VS.preview = async (path) => {
         if (!VS.ws) return VS.toast(t("Önce bir çalışma alanı aç.", "Open a workspace first."), "warn");
@@ -882,11 +917,11 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
     async function shareWorkspace() {
         if (!VS.ws) return VS.toast(t("Önce bir çalışma alanı aç.", "Open a workspace first."), "warn");
         for (const tab of VS.tabs) if (tab.dirty) await saveTab(tab);
-        const G = window.VGuard; const LIM = (G && G.LIMITS) || { files: 30, fileBytes: 100 * 1024, totalBytes: 300 * 1024 };
+        const G = window.VGuard; const LIM = (G && G.LIMITS) || { files: 30, fileBytes: 200 * 1024, totalBytes: 300 * 1024 };
         const files = [], skipped = [];
         for (const f of VS.ws.files) {
             if (VS.isBinaryName(f) || (G && G.isAllowed && !G.isAllowed(f))) { skipped.push(f); continue; }
-            const c = await textOf(f); if (c.length > LIM.fileBytes) { skipped.push(f + " (>100KB)"); continue; }
+            const c = await textOf(f); if (c.length > LIM.fileBytes) { skipped.push(f + " (>200KB)"); continue; }
             if (files.length >= LIM.files) { skipped.push(f); continue; }
             files.push({ name: f, content: c });
         }
@@ -909,7 +944,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         if (!r.ok) { if (r.error === "auth") { VS.toast(t("Önce giriş yapmalısın.", "You need to sign in first."), "warn", 6000, [{ label: t("Giriş Yap", "Sign In"), run: async () => { if (N) await N.site.login(); else location.href = "/hesap?next=%2Fstudio%2F#/giris"; } }]); return; } if (r.similar) return VS.toast(r.msg || r.error, "err", 12000, [{ label: t("Benzer paylaşımı aç", "Open similar post"), run: () => window.open((N ? "https://vemtriotr.vercel.app" : "") + "/topluluk#/p/" + r.similar.id, "_blank") }]);
             return VS.toast(t("Paylaşılamadı: ", "Couldn't publish: ") + (r.msg || r.error), "err"); }
         const url = (N ? "https://vemtriotr.vercel.app" : "") + "/topluluk#/p/" + r.post.id;
-        VS.toast(r.post.status === "published" ? t("Yayınlandı!", "Published!") : t("Gönderildi, yönetici onayından sonra yayına girecek.", "Submitted; it goes live after review."), "ok", 9000, [{ label: t("Gönderiyi aç", "Open post"), run: () => N ? N.openExternal(url) : window.open(url, "_blank") }]);
+        VS.toast(r.post.status === "draft" ? t("Taslak olarak kaydedildi. Yayına girmesi için kapak görseli gerekli: gönderiyi aç → “📸 OYUNDAN AL”.", "Saved as a draft. It needs a cover image to go live: open the post → “📸 FROM GAME”.") : r.post.status === "published" ? t("Yayınlandı!", "Published!") : t("Gönderildi, yönetici onayından sonra yayına girecek.", "Submitted; it goes live after review."), r.post.status === "draft" ? "warn" : "ok", 12000, [{ label: t("Gönderiyi aç", "Open post"), run: () => N ? N.openExternal(url) : window.open(url, "_blank") }]);
     }
     async function downloadZip() {
         if (!VS.ws || !window.JSZip) return;

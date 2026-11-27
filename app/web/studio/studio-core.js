@@ -57,6 +57,7 @@
         save() { VS.store.set(this.key, this.d); }
         async list() { return { files: Object.keys(this.d.files).sort(), dirs: [...new Set([...this.d.dirs, ...Object.keys(this.d.files).flatMap(f => { const p = f.split("/"); return p.slice(0, -1).map((_, i) => p.slice(0, i + 1).join("/")); })])].sort() }; }
         async read(p) { if (!(p in this.d.files)) throw new Error("ENOENT " + p); return this.d.files[p]; }
+        async dataUrl() { return null; }
         async write(p, c) { this.d.files[p] = c; this.save(); }
         async mkdir(p) { if (!this.d.dirs.includes(p)) this.d.dirs.push(p); this.save(); }
         async remove(p) { delete this.d.files[p]; for (const f of Object.keys(this.d.files)) if (f.startsWith(p + "/")) delete this.d.files[f]; this.d.dirs = this.d.dirs.filter(d => d !== p && !d.startsWith(p + "/")); this.save(); }
@@ -77,6 +78,8 @@
             await walk(this.h, ""); return { files: files.sort(), dirs: dirs.sort() };
         }
         async read(p) { const d = await this._dir(VS.dirname(p)); const f = await (await d.getFileHandle(VS.basename(p))).getFile(); return await f.text(); }
+        // resim/ses dosyası -> data: adresi (önizleme ve resim görüntüleyici için)
+        async dataUrl(p) { const d = await this._dir(VS.dirname(p)); const f = await (await d.getFileHandle(VS.basename(p))).getFile(); if (f.size > 15e6) return null; return await new Promise((ok, no) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = () => no(r.error); r.readAsDataURL(f); }); }
         async write(p, c) { const d = await this._dir(VS.dirname(p), true); const w = await (await d.getFileHandle(VS.basename(p), { create: true })).createWritable(); await w.write(c); await w.close(); }
         async mkdir(p) { await this._dir(p, true); }
         async remove(p) { const d = await this._dir(VS.dirname(p)); await d.removeEntry(VS.basename(p), { recursive: true }); }
@@ -92,6 +95,7 @@
         constructor(root) { this.root = root; this.kind = "native"; this.name = root.split(/[\\/]/).filter(Boolean).pop() || root; }
         list() { return N.fs.list(this.root); }
         read(p) { return N.fs.read(this.root, p); }
+        dataUrl(p) { return N.fs.dataUrl ? N.fs.dataUrl(this.root, p) : Promise.resolve(null); }
         write(p, c) { return N.fs.write(this.root, p, c); }
         mkdir(p) { return N.fs.mkdir(this.root, p); }
         remove(p) { return N.fs.remove(this.root, p); }

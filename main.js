@@ -93,6 +93,9 @@ ipcMain.handle("fs:remove", async (e, root, p) => { const f = inRoot(root, p); i
 ipcMain.handle("fs:rename", async (e, root, a, b) => { const to = inRoot(root, b); await fsp.mkdir(path.dirname(to), { recursive: true }); await fsp.rename(inRoot(root, a), to); });
 ipcMain.handle("fs:reveal", (e, root, p) => shell.showItemInFolder(inRoot(root, p)));
 ipcMain.handle("fs:saveAs", async (e, name, bytes) => { const r = await dialog.showSaveDialog(win, { defaultPath: name }); if (r.canceled || !r.filePath) return false; await fsp.writeFile(r.filePath, Buffer.from(bytes)); return true; });
+// Resim/ses dosyası -> data: adresi (editördeki resim görüntüleyici ve önizleme için; file:// sayfada engelli)
+const MIME = { png: "image/png", jpg: "image/jpeg", jpeg: "image/jpeg", gif: "image/gif", webp: "image/webp", svg: "image/svg+xml", ico: "image/x-icon", bmp: "image/bmp", mp3: "audio/mpeg", wav: "audio/wav", ogg: "audio/ogg", m4a: "audio/mp4" };
+ipcMain.handle("fs:dataUrl", async (e, root, p) => { const f = inRoot(root, p); const ext = path.extname(f).slice(1).toLowerCase(); if (!MIME[ext]) return null; const st = await fsp.stat(f); if (st.size > 15e6) return null; return "data:" + MIME[ext] + ";base64," + (await fsp.readFile(f)).toString("base64"); });
 ipcMain.on("fs:fileUrl", (e, root, p) => { try { e.returnValue = pathToFileURL(inRoot(root, p)).toString(); } catch (er) { e.returnValue = ""; } });
 
 // ---------- terminal (komut başına süreç; çalışma dizini her komuttan sonra raporlanır) ----------

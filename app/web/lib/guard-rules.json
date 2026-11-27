@@ -1,5 +1,5 @@
 {
- "version": "1.3",
+ "version": "1.4",
  "ALLOWED_EXT": [
   "html",
   "htm",
@@ -37,7 +37,7 @@
  ],
  "LIMITS": {
   "files": 30,
-  "fileBytes": 102400,
+  "fileBytes": 204800,
   "totalBytes": 307200
  },
  "W": {
@@ -286,6 +286,56 @@
    },
    "tr": "Dosya silme ya da Windows sistemine erişim.",
    "en": "Deletes files or accesses Windows internals."
+  },
+  {
+   "id": "wallet_drain",
+   "sev": "crit",
+   "re": {
+    "src": "ethereum\\.request\\s*\\(\\s*\\{\\s*method\\s*:\\s*['\"`](eth_sendTransaction|eth_sign|eth_signTypedData(_v\\d)?|personal_sign|wallet_addEthereumChain)|solana\\.(signTransaction|signAllTransactions|signAndSendTransaction)|setApprovalForAll|increaseAllowance",
+    "flags": "i"
+   },
+   "tr": "Kripto cüzdanından işlem/imza istiyor (cüzdan boşaltma şüphesi).",
+   "en": "Requests crypto wallet transactions/signatures (possible wallet drainer)."
+  },
+  {
+   "id": "fake_login",
+   "sev": "high",
+   "re": {
+    "src": "(discord|steam|instagram|roblox|google|epic ?games|riot|valorant|paypal|e-?devlet|banka)[^\\n]{0,80}(şifre|sifre|password|parola)|(şifre|sifre|password|parola)[^\\n]{0,80}(discord|steam|instagram|roblox|google|epic ?games|riot|valorant|paypal|e-?devlet|banka)",
+    "flags": "i"
+   },
+   "tr": "Tanınmış bir hizmetin şifresini istiyor gibi (sahte giriş sayfası şüphesi).",
+   "en": "Seems to ask for a known service's password (possible phishing page)."
+  },
+  {
+   "id": "cred_api",
+   "sev": "high",
+   "re": {
+    "src": "navigator\\.credentials\\.(get|store)|PasswordCredential|autocomplete\\s*=\\s*['\"]?current-password",
+    "flags": "i"
+   },
+   "tr": "Tarayıcının kayıtlı şifrelerine erişmeye çalışıyor.",
+   "en": "Tries to access the browser's saved passwords."
+  },
+  {
+   "id": "fork_bomb",
+   "sev": "high",
+   "re": {
+    "src": "while\\s*\\(\\s*(true|1|!0)\\s*\\)\\s*\\{[^}]{0,120}(window\\.open|new Worker|alert\\(|history\\.pushState|location\\.(href|assign))|setInterval\\s*\\([^)]{0,80}(window\\.open|alert\\()[^)]{0,40},\\s*[0-9]{1,2}\\s*\\)",
+    "flags": "i"
+   },
+   "tr": "Sonsuz döngüde pencere/uyarı/işçi açıyor (tarayıcıyı kilitleme).",
+   "en": "Opens windows/alerts/workers in an endless loop (browser lock)."
+  },
+  {
+   "id": "crypto_lib_miner",
+   "sev": "crit",
+   "re": {
+    "src": "(webminer|coin-?imp|crypto-?loot|minero|monerominer|xmr-?stak|cryptonight|randomx)\\b|stratum\\+(tcp|ssl)://",
+    "flags": "i"
+   },
+   "tr": "Kripto madenci kütüphanesi ya da havuz adresi.",
+   "en": "Crypto-miner library or mining pool address."
   }
  ],
  "NET": {
