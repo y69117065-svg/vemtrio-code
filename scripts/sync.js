@@ -11,7 +11,7 @@ if (fs.existsSync(path.join(SITE, "studio"))) {
     fs.rmSync(OUT, { recursive: true, force: true });
     cp(path.join(SITE, "studio"), path.join(OUT, "studio"));
     cp(path.join(SITE, "img", "logo.png"), path.join(OUT, "img", "logo.png"));
-    for (const f of ["guard.js", "profanity.js", "guard-rules.json"]) if (fs.existsSync(path.join(SITE, "lib", f))) cp(path.join(SITE, "lib", f), path.join(OUT, "lib", f));
+    // Guard imzaları ve küfür listesi artık sadece sunucuda (site api/_lib); uygulamaya kopyalanmaz, ön tarama site API'sinden yapılır.
     cp(path.join(SITE, "vemtrio.js"), path.join(OUT, "vemtrio.js"));
     // Uygulama simgesi build/icon.png'de ayrı tutulur (koyu zeminli; beyaz logo açık masaüstünde görünmüyordu). Sadece yoksa logodan oluşur.
     if (!fs.existsSync(path.join(ROOT, "build", "icon.png"))) cp(path.join(SITE, "img", "logo.png"), path.join(ROOT, "build", "icon.png"));

@@ -923,7 +923,10 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
     async function shareWorkspace() {
         if (!VS.ws) return VS.toast(t("Önce bir çalışma alanı aç.", "Open a workspace first."), "warn");
         for (const tab of VS.tabs) if (tab.dirty) await saveTab(tab);
-        const G = window.VGuard; const LIM = (G && G.LIMITS) || { files: 30, fileBytes: 200 * 1024, totalBytes: 300 * 1024 };
+        // Guard imzaları istemcide değil: izinli uzantılar ve ön tarama sunucudan gelir
+        const meta = await apiHub("guard_meta"); const LIM = (meta && meta.ok && meta.limits) || { files: 30, fileBytes: 200 * 1024, totalBytes: 300 * 1024 };
+        const EXT = meta && meta.ok && meta.ext, STDN = /^(README|LICENSE|LICENCE|AUTHORS|CHANGELOG|CONTRIBUTORS|NOTICE|COPYING)$/i;
+        const G = { isAllowed: n => !EXT || EXT.includes((String(n).toLowerCase().match(/\.([a-z0-9]+)$/) || [])[1] || "") || STDN.test(String(n).split("/").pop()) };
         const files = [], skipped = [];
         for (const f of VS.ws.files) {
             if (VS.isBinaryName(f) || (G && G.isAllowed && !G.isAllowed(f))) { skipped.push(f); continue; }
@@ -934,7 +937,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
         const total = files.reduce((a, f) => a + f.content.length, 0);
         if (!files.length) return VS.toast(t("Paylaşılabilir dosya yok.", "No shareable files."), "warn");
         if (total > LIM.totalBytes) return VS.toast(t("Toplam boyut 300 KB'ı geçiyor.", "Total size exceeds 300 KB."), "err");
-        let scan = ""; if (G && G.scan) { try { const r = G.scan(files); scan = `<p class="hint">VEMTRIO Guard: <b class="badge-s ${r.verdict}">${r.verdict}</b> · ${r.score}/100 · ${r.findings.length} ${t("bulgu", "findings")}</p>`; if (r.verdict === "danger") return VS.toast(t("Guard tehlikeli kod buldu, paylaşım engellendi.", "Guard found dangerous code; sharing blocked."), "err"); } catch (e) { } }
+        let scan = ""; { try { const r = await apiHub("prescan", { files }); if (!r || !r.ok) throw 0; scan = `<p class="hint">VEMTRIO Guard: <b class="badge-s ${r.verdict}">${r.verdict}</b> · ${r.score}/100 · ${r.findings.length} ${t("bulgu", "findings")}</p>`; if (r.verdict === "danger") return VS.toast(t("Guard tehlikeli kod buldu, paylaşım engellendi.", "Guard found dangerous code; sharing blocked."), "err"); } catch (e) { } }
         const v = await VS.modal(t("Toplulukta paylaş", "Share to community"), [
             { type: "html", html: `<p class="hint">${files.length} ${t("dosya", "files")} · ${VS.kb(total)}${skipped.length ? ` · ${t("atlanan", "skipped")}: ${esc(skipped.slice(0, 4).join(", "))}${skipped.length > 4 ? "…" : ""}` : ""}</p>${scan}` },
             { name: "title", label: t("BAŞLIK (3-60)", "TITLE (3-60)"), value: VS.ws.name.replace(/^Remix: /, "").slice(0, 60) },
@@ -945,7 +948,7 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
             { name: "aiok", label: t("VEMTRIO TOPLULUK AI", "VEMTRIO COMMUNITY AI"), type: "select", value: "1", options: [["1", t("Kodum örnek olarak kullanılabilir (adım gösterilir)", "My code can be used as an example (credited)")], ["0", t("Kullanılmasın", "Do not use my code")]] },
         ], t("Yayınla", "Publish"));
         if (!v) return;
-        const P = window.VProfanity; if (P && [v.title, v.summary, v.desc, v.tags].some(x => x && !P.isClean(x))) return VS.toast(t("Metinde uygunsuz ifade var.", "Inappropriate language found."), "err");
+        const tc = await apiHub("textcheck", { texts: [v.title, v.summary, v.desc, v.tags].filter(Boolean) }); if (tc && tc.ok && tc.clean === false) return VS.toast(t("Metinde uygunsuz ifade var.", "Inappropriate language found."), "err");
         const r = await apiHub("publish", { title: v.title, cat: v.cat, summary: v.summary, desc: v.desc, link: "", tags: String(v.tags || "").split(",").map(x => x.trim()).filter(Boolean).slice(0, 5), files, jam: false, aiok: v.aiok !== "0" });
         if (!r.ok) { if (r.error === "auth") { VS.toast(t("Önce giriş yapmalısın.", "You need to sign in first."), "warn", 6000, [{ label: t("Giriş Yap", "Sign In"), run: async () => { if (N) await N.site.login(); else location.href = "/hesap?next=%2Fstudio%2F#/giris"; } }]); return; } if (r.similar) return VS.toast(r.msg || r.error, "err", 12000, [{ label: t("Benzer paylaşımı aç", "Open similar post"), run: () => window.open((N ? "https://vemtriotr.vercel.app" : "") + "/topluluk#/p/" + r.similar.id, "_blank") }]);
             return VS.toast(t("Paylaşılamadı: ", "Couldn't publish: ") + (r.msg || r.error), "err"); }
@@ -1085,6 +1088,8 @@ window.addEventListener("error",function(e){parent.postMessage({__vprev:1,t:"err
             const base = window.MONACO_BASE;
             if (/^https?:/.test(base)) window.MonacoEnvironment = { getWorkerUrl: () => `data:text/javascript;charset=utf-8,${encodeURIComponent(`self.MonacoEnvironment={baseUrl:'${base}/../'};importScripts('${base}/base/worker/workerMain.js');`)}` };
             const s = document.createElement("script"); s.src = base + "/loader.js";
+            // CDN'den gelen yükleyici bütünlük (SRI) doğrulamasıyla yüklenir; sürüm değişirse bu özet de güncellenmeli
+            if (base === "https://cdnjs.cloudflare.com/ajax/libs/monaco-editor/0.52.2/min/vs") { s.integrity = "sha384-pHG02SG8pId94Np3AbPmBEJ1yPqaH0IkJGLSNGXYmuGhkazT8Lr/57WYpbkGjJtu"; s.crossOrigin = "anonymous"; s.referrerPolicy = "no-referrer"; }
             s.onload = () => { window.require.config({ paths: { vs: base } }); window.require(["vs/editor/editor.main"], () => res(window.monaco), rej); };
             s.onerror = rej; document.head.appendChild(s);
         });
